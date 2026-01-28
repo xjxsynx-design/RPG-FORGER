@@ -1,4 +1,4 @@
-const CACHE = 'rpg-dream-C.6d-SINGLE-A-' + '2026-01-10';
+const CACHE = 'rpg-forgeworks-v2026-01-28';
 const ASSETS = ['./','./index.html','./manifest.json','./sw.js'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -8,9 +8,32 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const isHTML = event.request.mode === 'navigate' || (url.pathname.endsWith('.html'));
+
+  if (isHTML) {
+    // Network-first for HTML so updates are picked up immediately.
+    event.respondWith(
+      fetch(event.request).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(event.request, copy)).catch(()=>{});
+        return res;
+      }).catch(() => caches.match(event.request).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for other assets.
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(res => {
       const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(event.request, copy)).catch(()=>{});
+      return res;
+    }))
+  );
+});
+
       caches.open(CACHE).then(c => c.put(event.request, copy)).catch(()=>{});
       return res;
     }).catch(() => caches.match('./index.html')))
