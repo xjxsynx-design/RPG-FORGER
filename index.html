@@ -5,152 +5,135 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RPG DREAM</title>
 <style>
-:root{
-  --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-  --font-accent: Chalkduster,'Chalkboard SE','Marker Felt','Bradley Hand',cursive;
 
-  --bg:#000000;
-  --panel:#111317;
+  :root{
+    --bg:#050507;
+    --panel:rgba(8,6,12,.45);
+    --panelBorder:rgba(255,255,255,.10);
 
-  --text:#e7e7ea;
-  --muted:#b6b8c0;
+    --ember:#ff7a1a;      /* forge orange */
+    --steel:#3b3f52;      /* steel */
+    --slate:#5c6a7a;      /* slate blue-gray */
+    --active:#2f7a4a;     /* earthy green */
+    --neon:#39ff14;       /* selection outline */
 
-  --steel:#2e3440;
-  --steel-border:#6b7280;
+    --btnBg:#2f1f4a;      /* deep purple */
+    --btnBg2:#3a2a5a;
+    --btnText:#f2f2f2;
+  }
 
-  --ember:#c2410c;
-  --ember-hover:#ea580c;
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: white;
+    background: var(--bg) url("./assets/landing_bg.png") center/cover no-repeat fixed;
+    overflow: hidden;
+  }
 
-  --warn:#f97316;
-}
-body{
-  margin:0;
-  background:var(--bg);
-  color:#efeaff;
-  font-family: var(--font-ui);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
-.wrapper{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:24px;
-}
-img{
-  max-width:260px;
-  width:70%;
-  opacity:.95;
-}
-button{
-  background:#7b5cff;
-  border:none;
-  border-radius:14px;
-  color:#fff;
-  padding:14px 28px;
-  font-size:16px;
-}
+  /* Contrast overlay so the scene reads on any phone display */
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,.10) 0%, rgba(0,0,0,.75) 60%, rgba(0,0,0,.92) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,.50), rgba(0,0,0,.80));
+    pointer-events:none;
+  }
 
-/* Typography system: UI vs Accent */
-h1,h2,h3,
-button,.btn,.primary,.secondary,
-.modal h3,.modal h2,.modal-title,
-.toast,.pill,.label,.header-title{
-  font-family: var(--font-accent);
-  letter-spacing: 0.02em;
-}
-input,select,textarea,small,p,li,span,div{
-  font-family: var(--font-ui);
-}
+  /* Centered stack */
+  .wrap{
+    position: relative;
+    height: 100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 20px;
+  }
 
+  .card{
+    position: relative;
+    width: min(560px, 92vw);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 18px;
+    padding: 22px 18px 20px;
+    border-radius: 22px;
+    background: var(--panel);
+    border: 1px solid var(--panelBorder);
+    backdrop-filter: blur(10px);
+  }
 
-/* ---------- Landing scene background ---------- */
-html, body { height: 100%; }
-body {
-  margin: 0;
-  overflow: hidden;
-  background: #000;
-}
+  /* logo */
+  .logo {
+    width: min(260px, 55vw);
+    height: auto;
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+    animation: logoIn 900ms ease-out 150ms forwards;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,.65));
+  }
 
-body::before{
-  content:"";
-  position: fixed;
-  inset: 0;
-  background: url('assets/landing_bg.png') center/cover no-repeat;
-  transform: scale(1.08);
-  animation: bgFloat 18s ease-in-out infinite alternate;
-  filter: saturate(1.05) contrast(1.06);
-  z-index: 0;
-}
-body::after{
-  content:"";
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(60% 50% at 50% 45%, rgba(0,0,0,0.05), rgba(0,0,0,0.75)),
-    linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.75));
-  z-index: 0;
-}
+  /* button */
+  .enter {
+    appearance:none;
+    border: 2px solid rgba(255,122,26,.85);
+    background: linear-gradient(180deg, var(--btnBg2), var(--btnBg));
+    color: var(--btnText);
+    border-radius: 18px;
+    padding: 14px 22px;
+    font-size: 34px;
+    line-height: 1;
+    min-width: min(520px, 86vw);
+    box-shadow:
+      0 12px 26px rgba(0,0,0,.60),
+      0 0 22px rgba(255,122,26,.18);
+    cursor: pointer;
 
-@keyframes bgFloat{
-  from{ transform: scale(1.08) translate3d(0,0,0); }
-  to  { transform: scale(1.12) translate3d(-1.5%, -1.0%, 0); }
-}
+    /* fade in after logo */
+    opacity: 0;
+    transform: translateY(12px);
+    animation: btnIn 700ms ease-out 1150ms forwards;
+  }
 
-.wrapper{
-  position: relative;
-  z-index: 1;
-  padding: 24px 18px;
-  gap: 18px;
-}
+  .enter:active{
+    transform: translateY(12px) scale(.98);
+    box-shadow:
+      0 10px 22px rgba(0,0,0,.55),
+      0 0 26px rgba(255,122,26,.25);
+  }
 
-.wrapper img{
-  width: min(340px, 78vw);
-  height: auto;
-  filter: drop-shadow(0 16px 28px rgba(0,0,0,0.65));
-  animation: fadeIn 0.9s ease-out both;
-}
+  @keyframes logoIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
 
-.enter-btn{
-  width: min(380px, 86vw);
-  border-radius: 18px;
-  padding: 18px 22px;
-  font-size: clamp(24px, 6vw, 40px);
-  letter-spacing: 1px;
-  font-family: Chalkduster, cursive;
-  background: #7a5cff;
-  border: 2px solid rgba(255,255,255,0.15);
-  box-shadow: 0 14px 28px rgba(0,0,0,0.5);
-  color: rgba(255,255,255,0.95);
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: btnIn 0.9s ease-out 0.6s both;
-}
+  @keyframes btnIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-.enter-btn:active{
-  transform: translateY(12px) scale(0.99);
-}
+  /* chalkduster-ish: iOS-only Chalkduster, otherwise a legible fallback */
+  .chalk{
+    font-family: "Chalkduster","Marker Felt","Bradley Hand", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    letter-spacing: .5px;
+    text-transform: none;
+  }
 
-@keyframes fadeIn{
-  from{ opacity: 0; transform: translateY(-6px); }
-  to  { opacity: 1; transform: translateY(0); }
-}
-@keyframes btnIn{
-  from{ opacity: 0; transform: translateY(12px); }
-  to  { opacity: 1; transform: translateY(0); }
-}
+  /* subtle top/bottom safe area padding */
+  .safeTop{ padding-top: env(safe-area-inset-top); }
+  .safeBottom{ padding-bottom: env(safe-area-inset-bottom); }
 
 </style>
 </head>
+
 <body>
-  <div class="wrapper" style="font-family: Chalkduster, cursive;">
-    <img src="assets/rpg_forgeworks_logo.png" alt="RPG Forgeworks Logo">
-    <button class="enter-btn" onclick="location.href='manager/index.html'">
-      Enter RPG FORGEWORKS
-</button>
+  <div class="wrap safeTop safeBottom">
+    <div class="card" role="presentation">
+      <img class="logo" src="./assets/rpg_forgeworks_logo.png" alt="RPG Forgeworks">
+      <button class="enter chalk" onclick="location.href='./manager/index.html'">
+        Enter RPG FORGEWORKS
+      </button>
+    </div>
   </div>
 </body>
 </html>
