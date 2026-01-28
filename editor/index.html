@@ -6,19 +6,41 @@
 <title>RPG DREAM EDITOR</title>
 <style>
 :root{
- --bg:#0b0718;--panel:#16102a;--stroke:#3a2b7a;--primary:#7b5cff;
- --text:#efeaff;--white:#ffffff;--grid:#3a2b7a
+  --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --font-accent: Chalkduster,'Chalkboard SE','Marker Felt','Bradley Hand',cursive;
+
+  /* Forgeworks Theme */
+  --bg:#000000;
+  --panel:#111317;
+  --panel-2:#161b22;
+
+  --text:#e7e7ea;
+  --muted:#b6b8c0;
+
+  --steel:#2e3440;
+  --steel-border:#6b7280;
+
+  --ember:#c2410c;
+  --ember-hover:#ea580c;
+
+  --earth:#4d7c59;
+
+  --select:#22ff66;           /* selection outline neon green */
+  --warn:#f97316;             /* forge orange for warnings/modals */
+
+  --grid-normal:#64748b;      /* slate blue-gray default */
+  --grid-high:#8fa3b8;
+  --grid: var(--grid-normal);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);
- font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
-#topbar{display:flex;align-items:center;gap:8px;padding:10px;
- background:var(--panel);border-bottom:1px solid var(--stroke)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
 #topbar .spacer{flex:1}
-button{background:var(--primary);border:none;border-radius:12px;
- color:#fff;padding:8px 12px;font-size:13px;white-space:nowrap}
-button.secondary{background:transparent;border:1px solid var(--primary)}
-button.active{outline:2px solid #fff}
+button{background:var(--steel);border:1px solid var(--steel-border);border-radius:12px;color:var(--text);padding:8px 12px;font-size:13px;white-space:nowrap;font-family:var(--font-accent)}
+button:hover{filter:brightness(1.05)}
+button.primary,#saveBtn{background:var(--ember);border-color:transparent;color:#fff7ed}
+button.primary:hover,#saveBtn:hover{background:var(--ember-hover)}
+button.secondary{background:transparent;border:1px solid var(--steel-border);color:var(--text)}
+button.active{background:var(--earth);border-color:transparent;outline:2px solid var(--select)}
 
 #toolbar{
  display:flex;gap:8px;padding:8px;background:#120b22;
@@ -45,6 +67,24 @@ canvas{display:block;touch-action:none}
  color:#7bffcc;font-weight:700;letter-spacing:.08em;
  text-shadow:0 0 6px rgba(123,255,204,.6)
 }
+
+/* Typography system: UI vs Accent */
+h1,h2,h3,
+button,.btn,.primary,.secondary,
+.modal h3,.modal h2,.modal-title,
+.toast,.pill,.label,.header-title{
+  font-family: var(--font-accent);
+  letter-spacing: 0.02em;
+}
+input,select,textarea,small,p,li,span,div{
+  font-family: var(--font-ui);
+}
+.hidden{display:none!important}
+#viewModalBack{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
+#viewModal{background:var(--panel-2);border:1px solid var(--steel-border);border-radius:16px;padding:16px;max-width:420px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+#viewModal h3{margin:0 0 8px 0;color:var(--warn);font-family:var(--font-accent)}
+#viewModal p{margin:0 0 12px 0;color:var(--text);font-family:var(--font-ui)}
+#viewModal .note{margin-top:12px;color:var(--warn);font-size:12px;line-height:1.2;font-family:var(--font-ui)}
 </style>
 </head>
 <body>
@@ -53,6 +93,7 @@ canvas{display:block;touch-action:none}
  <strong>Editor</strong>
  <div class="spacer"></div>
  <button id="saveBtn">Save</button>
+ <button id="gridContrastBtn" class="secondary">Grid: Normal</button>
 </div>
 
 <div id="toolbar">
@@ -104,6 +145,46 @@ function saveActive(){
   localStorage.setItem("rpgdream_active_project", JSON.stringify(active));
 }
 
+/* -------------------------
+   Storage Helpers (Manager-compatible)
+------------------------- */
+function getProjects() {
+  return JSON.parse(localStorage.getItem('rpgdream_projects') || '[]');
+}
+
+function saveProjects(projects) {
+  localStorage.setItem('rpgdream_projects', JSON.stringify(projects));
+}
+
+function upsertProject(project) {
+  if (!project || !project.id) return;
+  const projects = getProjects();
+  const idx = projects.findIndex(p => p.id === project.id);
+  if (idx >= 0) projects[idx] = project;
+  else projects.unshift(project);
+  saveProjects(projects);
+}
+
+function toast(msg) {
+  try {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.position = 'fixed';
+    t.style.left = '50%';
+    t.style.top = '18px';
+    t.style.transform = 'translateX(-50%)';
+    t.style.padding = '10px 14px';
+    t.style.borderRadius = '12px';
+    t.style.background = 'rgba(20,20,30,0.85)';
+    t.style.border = '1px solid rgba(140,110,255,0.35)';
+    t.style.color = '#fff';
+    t.style.zIndex = 9999;
+    t.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1200);
+  } catch (e) {}
+}
+
 function ensureViewSelected(){
   if(resolvedView){
     viewModalBack.style.display = "none";
@@ -134,6 +215,21 @@ pickAngular.addEventListener("click", () => commitView("angular"));
 
 ensureViewSelected();
 
+// Save button wiring (updates active project + projects list)
+const saveBtn = document.getElementById('saveBtn');
+if (saveBtn) {
+  saveBtn.addEventListener('click', () => {
+    try {
+      saveActive();
+      upsertProject(active);
+      toast('Saved');
+    } catch (e) {
+      console.error(e);
+      alert('Save failed.');
+    }
+  });
+}
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -146,6 +242,25 @@ function resize(){
 }
 window.addEventListener("resize", resize);
 resize();
+
+// --- Grid Contrast Toggle ---
+let gridHigh = false;
+const gridBtn = document.getElementById("gridContrastBtn");
+function applyGridContrast(){
+  const cs = getComputedStyle(document.documentElement);
+  const normal = cs.getPropertyValue('--grid-normal').trim() || '#64748b';
+  const high = cs.getPropertyValue('--grid-high').trim() || '#8fa3b8';
+  document.documentElement.style.setProperty('--grid', gridHigh ? high : normal);
+  if(gridBtn) gridBtn.textContent = gridHigh ? "Grid: High" : "Grid: Normal";
+}
+if(gridBtn){
+  gridBtn.addEventListener("click", ()=>{
+    gridHigh = !gridHigh;
+    applyGridContrast();
+  });
+}
+applyGridContrast();
+
 
 function isoToScreen(x,y){
  return {
