@@ -34,6 +34,14 @@ canvas{display:block;touch-action:none}
  color:#7bffcc;font-weight:700;letter-spacing:.08em;
  text-shadow:0 0 6px rgba(123,255,204,.6)
 }
+
+/* mandatory view selection modal */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999}
+.modal{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:16px}
+.modal h3{margin:0 0 12px 0;font-size:16px}
+.modal .row{display:flex;gap:10px}
+.modal button{flex:1;border:none;border-radius:12px;padding:12px;background:var(--primary);color:var(--white);font-weight:600}
+.modal button.secondary{background:transparent;border:1px solid var(--stroke);color:var(--text)}
 </style>
 </head>
 <body>
@@ -75,7 +83,63 @@ if(!map){
   location.href="../manager/index.html";
 }
 
-const view = map.viewMode === "angular" ? "angular" : "top";
+let view = (map && (map.viewMode === "angular" || map.viewMode === "top")) ? map.viewMode : null;
+
+let __renderStarted = false;
+function __startRenderOnce(){
+  if(__renderStarted) return;
+  __renderStarted = true;
+  render();
+}
+
+// Persist active project + project list safely
+function __persistActiveProject(activeProject){
+  try{
+    localStorage.setItem("rpgdream_active_project", JSON.stringify(activeProject));
+    const projects = JSON.parse(localStorage.getItem("rpgdream_projects") || "[]");
+    const idx = projects.findIndex(p => p.id === activeProject.id);
+    if(idx >= 0){
+      projects[idx] = activeProject;
+      localStorage.setItem("rpgdream_projects", JSON.stringify(projects));
+    }
+  }catch(e){
+    console.warn("Persist failed", e);
+  }
+}
+
+function __requireViewModeSelection(){
+  const modal = document.getElementById("viewModal");
+  const btnTop = document.getElementById("btnViewTop");
+  const btnAng = document.getElementById("btnViewAngular");
+  const btnCancel = document.getElementById("btnViewCancel");
+  if(!modal || !btnTop || !btnAng || !btnCancel){
+    alert("View selection UI missing. Please reload.");
+    return;
+  }
+  modal.classList.remove("hidden");
+
+  const choose = (mode) => {
+    // Map-level viewMode (supports mixed-view projects)
+    map.viewMode = mode;
+    view = mode;
+    // Write back to whichever container exists
+    if(active.data?.maps){
+      const mi = active.data.maps.findIndex(m => m.id === map.id);
+      if(mi >= 0) active.data.maps[mi] = map;
+    }else if(active.maps){
+      const mi = active.maps.findIndex(m => m.id === map.id);
+      if(mi >= 0) active.maps[mi] = map;
+    }
+    __persistActiveProject(active);
+    modal.classList.add("hidden");
+    __startRenderOnce();
+  };
+
+  btnTop.onclick = () => choose("top");
+  btnAng.onclick = () => choose("angular");
+  btnCancel.onclick = () => { location.href = "../manager/index.html"; };
+}
+
 
 
 const canvas = document.getElementById("canvas");
@@ -139,7 +203,8 @@ function render(){
 
  requestAnimationFrame(render);
 }
-render();
+if(view){ __startRenderOnce(); }
+else { __requireViewModeSelection(); }
 
 canvas.addEventListener("wheel", e=>{
  e.preventDefault();
@@ -160,5 +225,22 @@ canvas.addEventListener("pointermove", e=>{
 canvas.addEventListener("pointerup", ()=>panning=false);
 canvas.addEventListener("pointerleave", ()=>panning=false);
 </script>
+
+<!-- VIEW MODE REQUIRED MODAL -->
+<div id="viewModal" class="backdrop hidden">
+  <div class="modal">
+    <h3>Select map view mode</h3>
+    <p style="margin:0 0 14px 0; color: var(--text); opacity:.9; font-size:13px;">
+      This is required before the editor starts. You can change it per-map later.
+    </p>
+    <div class="row">
+      <button id="btnViewTop" type="button">Top Down</button>
+      <button id="btnViewAngular" type="button">Angular</button>
+    </div>
+    <div style="height:12px"></div>
+    <button id="btnViewCancel" class="secondary" type="button">Back to Manager</button>
+  </div>
+</div>
+
 </body>
 </html>
