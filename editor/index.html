@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RPG DREAM EDITOR</title>
 <style>
-.hidden{display:none !important;}
-
 :root{
  --bg:#0b0718;--panel:#16102a;--stroke:#3a2b7a;--primary:#7b5cff;
  --text:#efeaff;--white:#ffffff;--grid:#3a2b7a
@@ -31,19 +29,22 @@ button.active{outline:2px solid #fff}
 
 canvas{display:block;touch-action:none}
 
+/* --- View select modal (mandatory on first open) --- */
+#viewModalBack{position:fixed;inset:0;background:rgba(0,0,0,.55);
+ display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+#viewModal{width:min(520px,100%);background:var(--panel);border:1px solid var(--stroke);
+ border-radius:18px;padding:16px}
+#viewModal h3{margin:0 0 6px 0}
+#viewModal p{margin:0 0 12px 0;opacity:.9;line-height:1.35}
+#viewModal .row{display:flex;gap:10px;flex-wrap:wrap}
+#viewModal .row button{flex:1;min-width:140px}
+#viewModal .note{margin-top:10px;font-size:12px;opacity:.85}
+
 #phaseLabel{
  position:fixed;left:50%;bottom:6px;transform:translateX(-50%);
  color:#7bffcc;font-weight:700;letter-spacing:.08em;
  text-shadow:0 0 6px rgba(123,255,204,.6)
 }
-
-/* mandatory view selection modal */
-.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999}
-.modal{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:16px}
-.modal h3{margin:0 0 12px 0;font-size:16px}
-.modal .row{display:flex;gap:10px}
-.modal button{flex:1;border:none;border-radius:12px;padding:12px;background:var(--primary);color:var(--white);font-weight:600}
-.modal button.secondary{background:transparent;border:1px solid var(--stroke);color:var(--text)}
 </style>
 </head>
 <body>
@@ -64,90 +65,79 @@ canvas{display:block;touch-action:none}
 </div>
 
 <canvas id="canvas"></canvas>
+
+<!-- Mandatory view selection (only shown if this map has no viewMode yet) -->
+<div id="viewModalBack">
+  <div id="viewModal">
+    <h3>Select view for this map</h3>
+    <p>This map needs a view mode before editing can begin.</p>
+    <div class="row">
+      <button id="pickTop">Top</button>
+      <button id="pickAngular" class="secondary">Angular</button>
+    </div>
+    <div class="note">Once selected, this map's view cannot be changed until a new map is created.</div>
+  </div>
+</div>
 <div id="phaseLabel">PHASE 14F.1a</div>
 
 <script>
 const active = JSON.parse(localStorage.getItem("rpgdream_active_project")||"null");
 if(!active){ location.href="../manager/index.html"; }
 
-// ✅ Map-level viewMode (supports different view per map)
-const maps = active.data?.maps || active.maps || [];
-const activeMapId =
-  active.data?.editor?.activeMapId ||
-  active.editor?.activeMapId ||
-  (maps[0] && maps[0].id);
+// --- Resolve active map (supports older + newer project shapes) ---
+const maps = Array.isArray(active.maps) ? active.maps : [];
+const activeMapId = active.editor?.activeMapId || (maps[0]?.id);
+const activeMap = maps.find(m => m.id === activeMapId) || maps[0] || null;
 
-const map = maps.find(m => m.id === activeMapId) || maps[0] || null;
+// Project-level default (older projects) + per-map viewMode (preferred)
+let resolvedView = (activeMap?.viewMode || active.data?.view || "").toLowerCase();
+if(resolvedView !== "angular" && resolvedView !== "top") resolvedView = "";
 
-// If no map exists, fail loudly (manager should always create at least one map)
-if(!map){
-  alert("No maps found in active project. Please create a new project in Manager.");
-  location.href="../manager/index.html";
+// Locking rule: once a map has a viewMode, treat it as permanent.
+const viewLocked = !!activeMap?.viewMode;
+
+const viewModalBack = document.getElementById("viewModalBack");
+const pickTop = document.getElementById("pickTop");
+const pickAngular = document.getElementById("pickAngular");
+
+function saveActive(){
+  localStorage.setItem("rpgdream_active_project", JSON.stringify(active));
 }
 
-let view = (map && (map.viewMode === "angular" || map.viewMode === "top")) ? map.viewMode : null;
+function ensureViewSelected(){
+  if(resolvedView){
+    viewModalBack.style.display = "none";
+    return true;
+  }
+  // show modal
+  viewModalBack.style.display = "flex";
+  return false;
+}
 
-let __renderStarted = false;
-function __startRenderOnce(){
-  if(__renderStarted) return;
-  __renderStarted = true;
+function commitView(v){
+  const vv = v === "angular" ? "angular" : "top";
+  resolvedView = vv;
+  // set per-map viewMode (preferred)
+  if(activeMap){
+    activeMap.viewMode = vv;
+  }
+  // keep project default for backward compat
+  active.data = active.data || {};
+  active.data.view = vv;
+  saveActive();
+  viewModalBack.style.display = "none";
   render();
 }
 
-// Persist active project + project list safely
-function __persistActiveProject(activeProject){
-  try{
-    localStorage.setItem("rpgdream_active_project", JSON.stringify(activeProject));
-    const projects = JSON.parse(localStorage.getItem("rpgdream_projects") || "[]");
-    const idx = projects.findIndex(p => p.id === activeProject.id);
-    if(idx >= 0){
-      projects[idx] = activeProject;
-      localStorage.setItem("rpgdream_projects", JSON.stringify(projects));
-    }
-  }catch(e){
-    console.warn("Persist failed", e);
-  }
-}
+pickTop.addEventListener("click", () => commitView("top"));
+pickAngular.addEventListener("click", () => commitView("angular"));
 
-function __requireViewModeSelection(){
-  const modal = document.getElementById("viewModal");
-  const btnTop = document.getElementById("btnViewTop");
-  const btnAng = document.getElementById("btnViewAngular");
-  const btnCancel = document.getElementById("btnViewCancel");
-  if(!modal || !btnTop || !btnAng || !btnCancel){
-    alert("View selection UI missing. Please reload.");
-    return;
-  }
-  modal.classList.remove("hidden");
-
-  const choose = (mode) => {
-    // Map-level viewMode (supports mixed-view projects)
-    map.viewMode = mode;
-    view = mode;
-    // Write back to whichever container exists
-    if(active.data?.maps){
-      const mi = active.data.maps.findIndex(m => m.id === map.id);
-      if(mi >= 0) active.data.maps[mi] = map;
-    }else if(active.maps){
-      const mi = active.maps.findIndex(m => m.id === map.id);
-      if(mi >= 0) active.maps[mi] = map;
-    }
-    __persistActiveProject(active);
-    modal.classList.add("hidden");
-    __startRenderOnce();
-  };
-
-  btnTop.onclick = () => choose("top");
-  btnAng.onclick = () => choose("angular");
-  btnCancel.onclick = () => { location.href = "../manager/index.html"; };
-}
-
-
+ensureViewSelected();
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const TILE = parseInt(map.tileSize || active.tile || 32, 10);
+const TILE = 32;
 let cam = { x:0, y:0, zoom:1 };
 
 function resize(){
@@ -193,6 +183,7 @@ function drawAngularGrid(){
 }
 
 function render(){
+  const view = (active?.data?.view === "angular") ? "angular" : "top";
  ctx.setTransform(1,0,0,1,0,0);
  ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -205,8 +196,7 @@ function render(){
 
  requestAnimationFrame(render);
 }
-if(view){ __startRenderOnce(); }
-else { __requireViewModeSelection(); }
+render();
 
 canvas.addEventListener("wheel", e=>{
  e.preventDefault();
@@ -227,22 +217,5 @@ canvas.addEventListener("pointermove", e=>{
 canvas.addEventListener("pointerup", ()=>panning=false);
 canvas.addEventListener("pointerleave", ()=>panning=false);
 </script>
-
-<!-- VIEW MODE REQUIRED MODAL -->
-<div id="viewModal" class="backdrop hidden">
-  <div class="modal">
-    <h3>Select map view mode</h3>
-    <p style="margin:0 0 14px 0; color: var(--text); opacity:.9; font-size:13px;">
-      This is required before the editor starts. Once selected, it cannot be changed until a new map is created.
-    </p>
-    <div class="row">
-      <button id="btnViewTop" type="button">Top Down</button>
-      <button id="btnViewAngular" type="button">Angular</button>
-    </div>
-    <div style="height:12px"></div>
-    <button id="btnViewCancel" class="secondary" type="button">Back to Manager</button>
-  </div>
-</div>
-
 </body>
 </html>
