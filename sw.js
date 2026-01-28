@@ -1,5 +1,13 @@
 const CACHE = 'rpg-forgeworks-v2026-01-28';
-const ASSETS = ['./','./index.html','./manifest.json','./sw.js'];
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./assets/rpg_forgeworks_logo.png",
+  "./assets/landing_bg.png",
+  "./manager/index.html",
+  "./editor/index.html"
+];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
@@ -31,11 +39,5 @@ self.addEventListener('fetch', (event) => {
       caches.open(CACHE).then(c => c.put(event.request, copy)).catch(()=>{});
       return res;
     }))
-  );
-});
-
-      caches.open(CACHE).then(c => c.put(event.request, copy)).catch(()=>{});
-      return res;
-    }).catch(() => caches.match('./index.html')))
   );
 });
