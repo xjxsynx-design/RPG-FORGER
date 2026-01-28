@@ -43,35 +43,5 @@ button{
       Enter RPG FORGE
     </button>
   </div>
-
-<script>
-(function() {
-  if (!('serviceWorker' in navigator)) return;
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js');
-      // Check for updates on every load
-      await reg.update();
-
-      // If an updated SW is waiting, activate it immediately
-      if (reg.waiting) {
-        reg.waiting.postMessage('SKIP_WAITING');
-      }
-
-      // Reload once when the new SW takes control
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded) return;
-        reloaded = true;
-        window.location.reload();
-      });
-    } catch (e) {
-      // Silent fail: SW is an enhancement, not a requirement
-      console.warn('SW register failed', e);
-    }
-  });
-})();
-</script>
-
 </body>
 </html>
