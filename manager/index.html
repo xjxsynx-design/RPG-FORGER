@@ -1,251 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPG DREAM MANAGER</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RPG DREAM EDITOR</title>
 <style>
-body{
-  margin:0;
-  background:#0b0718;
-  color:#efeaff;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+.hidden{display:none !important;}
+
+:root{
+ --bg:#0b0718;--panel:#16102a;--stroke:#3a2b7a;--primary:#7b5cff;
+ --text:#efeaff;--white:#ffffff;--grid:#3a2b7a
 }
-.hidden{display:none!important}
-header{
-  text-align:center;
-  padding:16px 16px 8px;
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+ font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
+#topbar{display:flex;align-items:center;gap:8px;padding:10px;
+ background:var(--panel);border-bottom:1px solid var(--stroke)}
+#topbar .spacer{flex:1}
+button{background:var(--primary);border:none;border-radius:12px;
+ color:#fff;padding:8px 12px;font-size:13px;white-space:nowrap}
+button.secondary{background:transparent;border:1px solid var(--primary)}
+button.active{outline:2px solid #fff}
+
+#toolbar{
+ display:flex;gap:8px;padding:8px;background:#120b22;
+ border-bottom:1px solid var(--stroke);
+ overflow-x:auto;white-space:nowrap
 }
-header img{
-  max-width:220px;
-  width:60%;
-  display:block;
-  margin:0 auto 8px;
+#toolbar button{flex-shrink:0}
+
+canvas{display:block;touch-action:none}
+
+#phaseLabel{
+ position:fixed;left:50%;bottom:6px;transform:translateX(-50%);
+ color:#7bffcc;font-weight:700;letter-spacing:.08em;
+ text-shadow:0 0 6px rgba(123,255,204,.6)
 }
-header .label{
-  font-size:14px;
-  letter-spacing:3px;
-  color:#b7b0e6;
-}
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-button{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  font-size:15px;
-  background:#7b5cff;
-  color:#fff;
-}
-button.secondary{
-  background:transparent;
-  border:1px solid #7b5cff;
-}
-.card{
-  background:#16102a;
-  border-radius:14px;
-  padding:12px;
-}
-.meta{
-  font-size:13px;
-  color:#b7b0e6;
-}
-.row{
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-.row button{
-  flex:1;
-  padding:10px;
-  font-size:13px;
-}
-.backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:16px;
-}
-.modal{
-  width:100%;
-  max-width:420px;
-  background:#120b22;
-  border:1px solid #3a2b7a;
-  border-radius:18px;
-  padding:16px;
-}
-label{
-  font-size:13px;
-  color:#b7b0e6;
-}
-input,select{
-  width:100%;
-  padding:12px;
-  margin:8px 0 14px;
-  border-radius:10px;
-  border:1px solid #3a2b7a;
-  background:#120b22;
-  color:#efeaff;
-}
+
+/* mandatory view selection modal */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999}
+.modal{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:16px}
+.modal h3{margin:0 0 12px 0;font-size:16px}
+.modal .row{display:flex;gap:10px}
+.modal button{flex:1;border:none;border-radius:12px;padding:12px;background:var(--primary);color:var(--white);font-weight:600}
+.modal button.secondary{background:transparent;border:1px solid var(--stroke);color:var(--text)}
 </style>
 </head>
 <body>
 
-<header>
-  <img src="../assets/rpg_dream_logo.png" alt="RPG DREAM Logo">
-  <div class="label">MANAGER</div>
-</header>
-
-<div class="container">
-  <button onclick="openNew()">New Project</button>
-  <button class="secondary" onclick="openLoad()">Load From Local Storage</button>
+<div id="topbar">
+ <strong>Editor</strong>
+ <div class="spacer"></div>
+ <button id="saveBtn">Save</button>
 </div>
 
-<!-- NEW PROJECT MODAL -->
-<div class="backdrop hidden" id="newModal">
-  <div class="modal">
-    <h3>Create New Project</h3>
-
-    <label>Project Name</label>
-    <input id="projectName">
-<label>Grid Preset</label>
-    <select id="grid">
-      <option value="small">Small</option>
-      <option value="medium">Medium</option>
-      <option value="large">Large</option>
-    </select>
-
-    <label>Tile Size</label>
-    <select id="tile">
-      <option>16</option>
-      <option selected>32</option>
-      <option>48</option>
-      <option>64</option>
-      <option>96</option>
-      <option>128</option>
-    </select>
-
-    <button onclick="createProject()">Create</button>
-    <button class="secondary" onclick="closeNew()">Cancel</button>
-  </div>
+<div id="toolbar">
+ <button class="active">Paint</button>
+ <button class="secondary">Erase</button>
+ <button class="secondary">Pan</button>
+ <button class="secondary">Region</button>
+ <button class="secondary">Object</button>
+ <button class="secondary">Music</button>
 </div>
 
-<!-- LOAD PROJECT MODAL -->
-<div class="backdrop hidden" id="loadModal">
-  <div class="modal">
-    <h3>Local Projects</h3>
-    <div id="projectList"></div>
-    <button class="secondary" onclick="closeLoad()">Close</button>
-  </div>
-</div>
+<canvas id="canvas"></canvas>
+<div id="phaseLabel">PHASE 14F.1a</div>
 
 <script>
-function getProjects(){
-  return JSON.parse(localStorage.getItem("rpgdream_projects")||"[]");
-}
-function saveProjects(p){
-  localStorage.setItem("rpgdream_projects",JSON.stringify(p));
-}
-function openEditorById(id){
-  const projects=getProjects();
-  const p=projects.find(x=>x.id===id);
-  if(!p){ alert("Project not found"); return; }
-  openEditor(p);
+const active = JSON.parse(localStorage.getItem("rpgdream_active_project")||"null");
+if(!active){ location.href="../manager/index.html"; }
+
+// ✅ Map-level viewMode (supports different view per map)
+const maps = active.data?.maps || active.maps || [];
+const activeMapId =
+  active.data?.editor?.activeMapId ||
+  active.editor?.activeMapId ||
+  (maps[0] && maps[0].id);
+
+const map = maps.find(m => m.id === activeMapId) || maps[0] || null;
+
+// If no map exists, fail loudly (manager should always create at least one map)
+if(!map){
+  alert("No maps found in active project. Please create a new project in Manager.");
+  location.href="../manager/index.html";
 }
 
-function openEditor(project){
-  localStorage.setItem("rpgdream_active_project",JSON.stringify(project));
-  location.href="../editor/index.html";
-}
-function renderProjects(){
-  const list=document.getElementById("projectList");
-  list.innerHTML="";
-  const projects=getProjects();
+let view = (map && (map.viewMode === "angular" || map.viewMode === "top")) ? map.viewMode : null;
 
-  if(!projects.length){
-    list.innerHTML="<em>No saved projects</em>";
+let __renderStarted = false;
+function __startRenderOnce(){
+  if(__renderStarted) return;
+  __renderStarted = true;
+  render();
+}
+
+// Persist active project + project list safely
+function __persistActiveProject(activeProject){
+  try{
+    localStorage.setItem("rpgdream_active_project", JSON.stringify(activeProject));
+    const projects = JSON.parse(localStorage.getItem("rpgdream_projects") || "[]");
+    const idx = projects.findIndex(p => p.id === activeProject.id);
+    if(idx >= 0){
+      projects[idx] = activeProject;
+      localStorage.setItem("rpgdream_projects", JSON.stringify(projects));
+    }
+  }catch(e){
+    console.warn("Persist failed", e);
+  }
+}
+
+function __requireViewModeSelection(){
+  const modal = document.getElementById("viewModal");
+  const btnTop = document.getElementById("btnViewTop");
+  const btnAng = document.getElementById("btnViewAngular");
+  const btnCancel = document.getElementById("btnViewCancel");
+  if(!modal || !btnTop || !btnAng || !btnCancel){
+    alert("View selection UI missing. Please reload.");
     return;
   }
+  modal.classList.remove("hidden");
 
-  projects.forEach(p=>{
-    // Back-compat: older saves had top-level view/grid/tile
-    const maps = p.data?.maps || [];
-    const map0 = maps[0] || null;
-    const viewLabel = map0?.viewMode || p.view || "top";
-    const tileLabel = map0?.tileSize || p.tile || 32;
-    const gridLabel = map0?.gridPreset || p.grid || "medium";
-
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`<strong>${p.name}</strong>
-      <div class="meta">${viewLabel} • ${tileLabel}px • ${gridLabel}</div>`;
-
-    const row=document.createElement("div");
-    row.className="row";
-    row.innerHTML=`
-      <button onclick='openEditorById("${p.id}")'>Continue</button>
-      <button class="secondary" onclick='renameProj("${p.id}")'>Rename</button>
-      <button class="secondary" onclick='deleteProj("${p.id}")'>Delete</button>
-    `;
-    card.appendChild(row);
-    list.appendChild(card);
-  });
-}
-function createProject(){
-  const mapId="map_1";
-
-  const project={
-    id:"p_"+Date.now(),
-    name:projectName.value||"Untitled Project",
-    data:{
-      editor:{
-        activeMapId: mapId,
-        camera:{ x:0, y:0, zoom:1 }
-      },
-      // ✅ Map-level viewMode (required for mixed-view projects / cutscenes)
-      maps:[{
-        id: mapId,
-        name:"Map 1",
-        viewMode: "top",      // default (editor controls per-map view)
-        gridPreset: grid.value,    // small|medium|large (manager UI)
-        tileSize: parseInt(tile.value,10) || 32,
-        layers:{ tiles:[], regions:[], objects:[] }
-      }]
+  const choose = (mode) => {
+    // Map-level viewMode (supports mixed-view projects)
+    map.viewMode = mode;
+    view = mode;
+    // Write back to whichever container exists
+    if(active.data?.maps){
+      const mi = active.data.maps.findIndex(m => m.id === map.id);
+      if(mi >= 0) active.data.maps[mi] = map;
+    }else if(active.maps){
+      const mi = active.maps.findIndex(m => m.id === map.id);
+      if(mi >= 0) active.maps[mi] = map;
     }
+    __persistActiveProject(active);
+    modal.classList.add("hidden");
+    __startRenderOnce();
   };
 
-  const projects=getProjects();
-  projects.unshift(project);
-  saveProjects(projects);
-  openEditor(project);
+  btnTop.onclick = () => choose("top");
+  btnAng.onclick = () => choose("angular");
+  btnCancel.onclick = () => { location.href = "../manager/index.html"; };
 }
-function renameProj(id){
-  const projects=getProjects();
-  const p=projects.find(x=>x.id===id);
-  const n=prompt("Rename project",p.name);
-  if(n){p.name=n;saveProjects(projects);renderProjects();}
+
+
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const TILE = parseInt(map.tileSize || active.tile || 32, 10);
+let cam = { x:0, y:0, zoom:1 };
+
+function resize(){
+ canvas.width = innerWidth;
+ canvas.height = innerHeight - 120;
 }
-function deleteProj(id){
-  if(confirm("Delete project?")){
-    saveProjects(getProjects().filter(p=>p.id!==id));
-    renderProjects();
+window.addEventListener("resize", resize);
+resize();
+
+function isoToScreen(x,y){
+ return {
+  x: (x - y) * (TILE/2),
+  y: (x + y) * (TILE/4)
+ };
+}
+
+function drawTopGrid(){
+ const step = TILE * cam.zoom;
+ ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+ for(let x=0;x<canvas.width;x+=step){
+  ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+ }
+ for(let y=0;y<canvas.height;y+=step){
+  ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+ }
+}
+
+function drawAngularGrid(){
+ ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+ const range = 40;
+ for(let x=-range;x<=range;x++){
+  for(let y=-range;y<=range;y++){
+   const p = isoToScreen(x,y);
+   ctx.beginPath();
+   ctx.moveTo(p.x, p.y - TILE/4);
+   ctx.lineTo(p.x + TILE/2, p.y);
+   ctx.lineTo(p.x, p.y + TILE/4);
+   ctx.lineTo(p.x - TILE/2, p.y);
+   ctx.closePath();
+   ctx.stroke();
   }
+ }
 }
-function openNew(){ newModal.classList.remove("hidden"); }
-function closeNew(){ newModal.classList.add("hidden"); }
-function openLoad(){ renderProjects(); loadModal.classList.remove("hidden"); }
-function closeLoad(){ loadModal.classList.add("hidden"); }
+
+function render(){
+ ctx.setTransform(1,0,0,1,0,0);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ ctx.translate(canvas.width/2, canvas.height/2);
+ ctx.scale(cam.zoom, cam.zoom);
+ ctx.translate(-canvas.width/2 - cam.x, -canvas.height/2 - cam.y);
+
+ if(view === "angular") drawAngularGrid();
+ else drawTopGrid();
+
+ requestAnimationFrame(render);
+}
+if(view){ __startRenderOnce(); }
+else { __requireViewModeSelection(); }
+
+canvas.addEventListener("wheel", e=>{
+ e.preventDefault();
+ cam.zoom = Math.max(.5, Math.min(3, cam.zoom + (e.deltaY>0?-0.1:0.1)));
+},{passive:false});
+
+let panning=false, last={x:0,y:0};
+canvas.addEventListener("pointerdown", e=>{
+ panning=true; last={x:e.clientX,y:e.clientY};
+});
+canvas.addEventListener("pointermove", e=>{
+ if(panning){
+  cam.x += (last.x - e.clientX)/cam.zoom;
+  cam.y += (last.y - e.clientY)/cam.zoom;
+  last={x:e.clientX,y:e.clientY};
+ }
+});
+canvas.addEventListener("pointerup", ()=>panning=false);
+canvas.addEventListener("pointerleave", ()=>panning=false);
 </script>
+
+<!-- VIEW MODE REQUIRED MODAL -->
+<div id="viewModal" class="backdrop hidden">
+  <div class="modal">
+    <h3>Select map view mode</h3>
+    <p style="margin:0 0 14px 0; color: var(--text); opacity:.9; font-size:13px;">
+      This is required before the editor starts. Once selected, it cannot be changed until a new map is created.
+    </p>
+    <div class="row">
+      <button id="btnViewTop" type="button">Top Down</button>
+      <button id="btnViewAngular" type="button">Angular</button>
+    </div>
+    <div style="height:12px"></div>
+    <button id="btnViewCancel" class="secondary" type="button">Back to Manager</button>
+  </div>
+</div>
 
 </body>
 </html>
