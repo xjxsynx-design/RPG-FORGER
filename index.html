@@ -4,12 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RPG DREAM</title>
-<style>
+<style>:root{
+  --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --font-accent: Chalkduster,'Chalkboard SE','Marker Felt','Bradley Hand',cursive;
+
+  --bg:#000000;
+  --panel:#111317;
+
+  --text:#e7e7ea;
+  --muted:#b6b8c0;
+
+  --steel:#2e3440;
+  --steel-border:#6b7280;
+
+  --ember:#c2410c;
+  --ember-hover:#ea580c;
+
+  --warn:#f97316;
+}
 body{
   margin:0;
-  background:#0b0718;
+  background:var(--bg);
   color:#efeaff;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  font-family: var(--font-ui);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -33,6 +50,18 @@ button{
   color:#fff;
   padding:14px 28px;
   font-size:16px;
+}
+
+/* Typography system: UI vs Accent */
+h1,h2,h3,
+button,.btn,.primary,.secondary,
+.modal h3,.modal h2,.modal-title,
+.toast,.pill,.label,.header-title{
+  font-family: var(--font-accent);
+  letter-spacing: 0.02em;
+}
+input,select,textarea,small,p,li,span,div{
+  font-family: var(--font-ui);
 }
 </style>
 </head>
