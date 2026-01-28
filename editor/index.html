@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RPG DREAM EDITOR</title>
 <style>
+.hidden{display:none !important;}
+
 :root{
  --bg:#0b0718;--panel:#16102a;--stroke:#3a2b7a;--primary:#7b5cff;
  --text:#efeaff;--white:#ffffff;--grid:#3a2b7a
@@ -231,7 +233,7 @@ canvas.addEventListener("pointerleave", ()=>panning=false);
   <div class="modal">
     <h3>Select map view mode</h3>
     <p style="margin:0 0 14px 0; color: var(--text); opacity:.9; font-size:13px;">
-      This is required before the editor starts. You can change it per-map later.
+      This is required before the editor starts. Once selected, it cannot be changed until a new map is created.
     </p>
     <div class="row">
       <button id="btnViewTop" type="button">Top Down</button>
