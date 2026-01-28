@@ -118,14 +118,7 @@ input,select{
 
     <label>Project Name</label>
     <input id="projectName">
-
-    <label>View Type</label>
-    <select id="view">
-      <option value="topdown">Top View</option>
-      <option value="angular">Angular View</option>
-    </select>
-
-    <label>Grid Preset</label>
+<label>Grid Preset</label>
     <select id="grid">
       <option value="small">Small</option>
       <option value="medium">Medium</option>
@@ -163,6 +156,13 @@ function getProjects(){
 function saveProjects(p){
   localStorage.setItem("rpgdream_projects",JSON.stringify(p));
 }
+function openEditorById(id){
+  const projects=getProjects();
+  const p=projects.find(x=>x.id===id);
+  if(!p){ alert("Project not found"); return; }
+  openEditor(p);
+}
+
 function openEditor(project){
   localStorage.setItem("rpgdream_active_project",JSON.stringify(project));
   location.href="../editor/index.html";
@@ -170,15 +170,30 @@ function openEditor(project){
 function renderProjects(){
   const list=document.getElementById("projectList");
   list.innerHTML="";
-  getProjects().forEach(p=>{
+  const projects=getProjects();
+
+  if(!projects.length){
+    list.innerHTML="<em>No saved projects</em>";
+    return;
+  }
+
+  projects.forEach(p=>{
+    // Back-compat: older saves had top-level view/grid/tile
+    const maps = p.data?.maps || [];
+    const map0 = maps[0] || null;
+    const viewLabel = map0?.viewMode || p.view || "top";
+    const tileLabel = map0?.tileSize || p.tile || 32;
+    const gridLabel = map0?.gridPreset || p.grid || "medium";
+
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`<strong>${p.name}</strong>
-      <div class="meta">${p.view} • ${p.tile}px • ${p.grid}</div>`;
+      <div class="meta">${viewLabel} • ${tileLabel}px • ${gridLabel}</div>`;
+
     const row=document.createElement("div");
     row.className="row";
     row.innerHTML=`
-      <button onclick='openEditor(${JSON.stringify(p)})'>Continue</button>
+      <button onclick='openEditorById("${p.id}")'>Continue</button>
       <button class="secondary" onclick='renameProj("${p.id}")'>Rename</button>
       <button class="secondary" onclick='deleteProj("${p.id}")'>Delete</button>
     `;
@@ -187,13 +202,28 @@ function renderProjects(){
   });
 }
 function createProject(){
+  const mapId="map_1";
+
   const project={
     id:"p_"+Date.now(),
     name:projectName.value||"Untitled Project",
-    view:view.value,
-    grid:grid.value,
-    tile:tile.value
+    data:{
+      editor:{
+        activeMapId: mapId,
+        camera:{ x:0, y:0, zoom:1 }
+      },
+      // ✅ Map-level viewMode (required for mixed-view projects / cutscenes)
+      maps:[{
+        id: mapId,
+        name:"Map 1",
+        viewMode: "top",      // default (editor controls per-map view)
+        gridPreset: grid.value,    // small|medium|large (manager UI)
+        tileSize: parseInt(tile.value,10) || 32,
+        layers:{ tiles:[], regions:[], objects:[] }
+      }]
+    }
   };
+
   const projects=getProjects();
   projects.unshift(project);
   saveProjects(projects);
