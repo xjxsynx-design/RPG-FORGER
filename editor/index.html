@@ -48,6 +48,8 @@ button.active{background:var(--earth);border-color:transparent;outline:2px solid
  overflow-x:auto;white-space:nowrap
 }
 #toolbar button{flex-shrink:0}
+#toolbar button.active{outline:2px solid var(--neon);}
+
 
 canvas{display:block;touch-action:none}
 
@@ -85,6 +87,53 @@ input,select,textarea,small,p,li,span,div{
 #viewModal h3{margin:0 0 8px 0;color:var(--warn);font-family:var(--font-accent)}
 #viewModal p{margin:0 0 12px 0;color:var(--text);font-family:var(--font-ui)}
 #viewModal .note{margin-top:12px;color:var(--warn);font-size:12px;line-height:1.2;font-family:var(--font-ui)}
+
+
+/* =========================
+   THEME TOKENS (Forgeworks)
+========================= */
+:root{
+  --bg:#07060b;
+  --panel:#150f28;
+  --panel2:#120b22;
+  --steel:#5b6775;
+  --ember:#f08a2b;
+  --earthy:#4c8a5a; /* active tool */
+  --neon:#37ff6b;   /* selection outline */
+  --grid:#495a78;   /* slate blue-gray */
+  --gridHi:#8da3c7; /* high contrast */
+  --parchment:#f3e6c8;
+  --parchment2:#e8d7b2;
+  --text:#e9e6f2;
+}
+
+body{background:var(--bg); color:var(--text);}
+
+/* Ensure Chalkduster everywhere it matters */
+body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+
+/* Modals */
+.backdrop{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.55);
+  display:flex; align-items:center; justify-content:center;
+  padding:16px;
+  z-index:9999;
+}
+.backdrop.hidden{display:none;}
+.modal{
+  width:min(520px, 92vw);
+  max-height: 85vh;
+  overflow:auto;
+  background: rgba(21,15,40,.92);
+  border:2px solid rgba(240,138,43,.45);
+  border-radius:18px;
+  padding:18px 18px 16px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+}
+.modal h3{margin:0 0 10px; color:var(--ember); letter-spacing:.5px;}
+.modal .muted{opacity:.85; line-height:1.35; margin:0 0 14px;}
+
 </style>
 </head>
 <body>
@@ -92,7 +141,10 @@ input,select,textarea,small,p,li,span,div{
 <div id="topbar">
  <strong>Editor</strong>
  <div class="spacer"></div>
- <button id="saveBtn">Save</button>
+ <button class="secondary" id="zoomOutBtn">−</button>
+      <button class="secondary" id="zoomInBtn">+</button>
+      <button class="secondary" id="zoomResetBtn">100%</button>
+      <button id="saveBtn">Save</button>
  <button id="gridContrastBtn" class="secondary">Grid: Normal</button>
 </div>
 
@@ -119,7 +171,7 @@ input,select,textarea,small,p,li,span,div{
     <div class="note">Once selected, this map's view cannot be changed until a new map is created.</div>
   </div>
 </div>
-<div id="phaseLabel">PHASE 14F.1a</div>
+<div id="phaseLabel">PATCH C • PHASE 14F.1a</div>
 
 <script>
 const active = JSON.parse(localStorage.getItem("rpgdream_active_project")||"null");
@@ -232,6 +284,71 @@ if (saveBtn) {
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
+
+
+/* -------------------------
+   TOOL WIRING (UI)
+------------------------- */
+let currentTool = "paint";
+
+function setActiveTool(name){
+  currentTool = name;
+  document.querySelectorAll("#toolbar button").forEach(b=>{
+    const t=(b.dataset.tool||"").toLowerCase();
+    b.classList.toggle("active", t===name);
+  });
+
+  // open modals for tool types that are modal-driven
+  if (name === "region") openModal("regionModal");
+  if (name === "object") openModal("objectModal");
+  if (name === "music") openModal("musicModal");
+}
+
+function openModal(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.remove("hidden");
+}
+function closeModal(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.add("hidden");
+}
+
+function wireToolbar(){
+  // tag each button by its label once
+  document.querySelectorAll("#toolbar button").forEach(btn=>{
+    if(!btn.dataset.tool){
+      btn.dataset.tool = btn.textContent.trim().toLowerCase();
+    }
+    btn.addEventListener("click", ()=>{
+      const tool = (btn.dataset.tool||"").toLowerCase();
+      if(["paint","erase","pan","region","object","music"].includes(tool)){
+        setActiveTool(tool);
+      }
+    });
+  });
+
+  // modal close buttons
+  document.querySelectorAll("[data-close]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      closeModal(btn.getAttribute("data-close"));
+    });
+  });
+
+  // default
+  setActiveTool("paint");
+}
+
+function drawParchmentBackground(){
+  // Fill a parchment-like base so the grid sits on top (prevents white/blank canvas look)
+  const g = ctx.createLinearGradient(0,0,0,canvas.height);
+  g.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue("--parchment") || "#f3e6c8");
+  g.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue("--parchment2") || "#e8d7b2");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
 
 const TILE = 32;
 let cam = { x:0, y:0, zoom:1 };
@@ -426,5 +543,31 @@ canvas.addEventListener("pointermove", e=>{
 canvas.addEventListener("pointerup", ()=>panning=false);
 canvas.addEventListener("pointerleave", ()=>panning=false);
 </script>
+
+<!-- MODALS -->
+<div class="backdrop hidden" id="regionModal">
+  <div class="modal">
+    <h3>Regions</h3>
+    <p class="muted">Tap and drag on the canvas to mark regions (coming next).</p>
+    <button class="secondary" data-close="regionModal">Close</button>
+  </div>
+</div>
+
+<div class="backdrop hidden" id="objectModal">
+  <div class="modal">
+    <h3>Objects</h3>
+    <p class="muted">Place interactables, NPC anchors, and props (coming next).</p>
+    <button class="secondary" data-close="objectModal">Close</button>
+  </div>
+</div>
+
+<div class="backdrop hidden" id="musicModal">
+  <div class="modal">
+    <h3>Music</h3>
+    <p class="muted">Assign BGM / SFX per map or region (coming next).</p>
+    <button class="secondary" data-close="musicModal">Close</button>
+  </div>
+</div>
+
 </body>
 </html>
