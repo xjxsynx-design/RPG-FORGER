@@ -168,8 +168,8 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
     <h3>Select view for this map</h3>
     <p>This map needs a view mode before editing can begin.</p>
     <div class="row">
-      <button id="pickTop">Top</button>
-      <button id="pickAngular" class="secondary">Angular</button>
+      <button id="pickTop" type="button" onclick="setViewMode(\'top\')">Top</button>
+      <button id="pickAngular" type="button" onclick="setViewMode(\'angular\')" class="secondary">Angular</button>
     </div>
     <div class="note">Once selected, this map's view cannot be changed until a new map is created.</div>
   </div>
@@ -177,6 +177,16 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
 <div id="phaseLabel">PATCH C • PHASE 14F.1a</div>
 
 <script>
+
+function normalizeViewMode(v) {
+  if (!v) return "";
+  const s = String(v).trim().toLowerCase();
+  if (s === "angular" || s === "iso" || s === "isometric") return "angular";
+  if (s === "top" || s === "topdown" || s === "top-down" || s === "orthographic") return "top";
+  if (s === "unset" || s === "none") return "";
+  return s;
+}
+
 /* =========================================================
    RPG FORGEWORKS — Editor (single-file, no external deps)
    Fix focus: wire toolbar buttons + persist viewMode per map
@@ -245,13 +255,49 @@ function showViewModal(){
 function hideViewModal(){
   document.getElementById("viewModalBack").classList.add("hidden");
 }
-function setViewMode(mode){
-  if (!activeMap) return;
-  activeMap.viewMode = mode; // "top" | "angular"
-  persistProject();
-  hideViewModal();
-  draw();
+
+function setViewMode(mode) {
+  try {
+    mode = normalizeViewMode(mode);
+
+    // Resolve active project/map fresh each time (avoids stale refs)
+    const project = getActiveProject();
+    if (!project || !Array.isArray(project.maps) || !project.maps.length) {
+      // No project -> go back to manager
+      window.location.href = "../manager/index.html";
+      return;
+    }
+
+    const activeMap = resolveActiveMap(project);
+    if (!activeMap) {
+      window.location.href = "../manager/index.html";
+      return;
+    }
+
+    activeMap.viewMode = mode;
+    // Also keep a convenience pointer for UI/tooling
+    project.editor = project.editor || {};
+    project.editor.activeMapId = activeMap.id;
+
+    // Persist before hiding modal so reload works
+    saveActiveProject(project);
+    upsertProjectInList(project);
+
+    hideViewModal();
+
+    // Re-init renderer
+    const vm = normalizeViewMode(activeMap.viewMode);
+    if (vm === "angular") initAngularGrid();
+    else initTopDownGrid();
+
+    updateProjectLabel(project, activeMap);
+  } catch (err) {
+    console.error("setViewMode error:", err);
+    // Keep modal visible so user can retry
+    alert("View mode could not be set. Please refresh and try again.");
+  }
 }
+
 
 /* -------------------------
    Grid + Canvas render
@@ -394,29 +440,42 @@ function wireViewModal(){
 /* -------------------------
    Bootstrap
 ------------------------- */
-function bootstrap(){
-  project = loadActiveProject();
-  if (!project || !Array.isArray(project.maps) || project.maps.length === 0){
-    backToManager();
-    return;
-  }
-  activeMap = resolveActiveMap(project);
-  if (!activeMap){
-    backToManager();
+
+function bootstrap() {
+  const project = getActiveProject();
+
+  // No project -> back to manager
+  if (!project || !Array.isArray(project.maps) || !project.maps.length) {
+    window.location.href = "../manager/index.html";
     return;
   }
 
-  setCanvasSize();
-  applyZoom();
-  setActiveTool("paint");
+  // Resolve active map (with fallback)
+  const activeMap = resolveActiveMap(project);
+  if (!activeMap) {
+    window.location.href = "../manager/index.html";
+    return;
+  }
 
+  // Normalize view mode
+  activeMap.viewMode = normalizeViewMode(activeMap.viewMode);
+
+  // Wire UI
   wireToolbar();
   wireViewModal();
 
-  draw();
+  // If missing view mode, force modal. Otherwise render immediately.
+  if (!activeMap.viewMode) {
+    showViewModal();
+  } else {
+    hideViewModal();
+    if (activeMap.viewMode === "angular") initAngularGrid();
+    else initTopDownGrid();
+  }
+
+  updateProjectLabel(project, activeMap);
 }
 
-document.addEventListener("DOMContentLoaded", bootstrap);
 </script>
 
 <!-- MODALS -->
