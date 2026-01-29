@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RPG DREAM EDITOR</title>
+<title>RPG Forgeworks — Editor</title>
 <style>
 :root{
   --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
@@ -311,6 +311,100 @@ function render(){
 
  requestAnimationFrame(render);
 }
+
+// -------------------------
+// Zoom (mouse wheel + pinch)
+// -------------------------
+(function enableZoom(){
+  // Wheel zoom (desktop / trackpad)
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const prev = cam.zoom;
+    const factor = e.deltaY < 0 ? 1.12 : 0.90;
+    cam.zoom = Math.max(0.5, Math.min(4, cam.zoom * factor));
+
+    // Zoom around cursor so it feels natural
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    const worldX = cam.x + (cx / prev);
+    const worldY = cam.y + (cy / prev);
+
+    cam.x = worldX - (cx / cam.zoom);
+    cam.y = worldY - (cy / cam.zoom);
+
+    render();
+  }, { passive: false });
+
+  // Pinch zoom (touch)
+  const pts = new Map(); // pointerId -> {x,y}
+  let lastDist = null;
+  let lastCenter = null;
+
+  function dist(a,b){
+    const dx = a.x-b.x, dy = a.y-b.y;
+    return Math.hypot(dx,dy);
+  }
+  function center(a,b){ return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 }; }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch") {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2){
+        const [p1,p2] = Array.from(pts.values());
+        lastDist = dist(p1,p2);
+        lastCenter = center(p1,p2);
+      }
+    }
+  }, { passive: true });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "touch") return;
+    if (!pts.has(e.pointerId)) return;
+
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pts.size === 2){
+      const [p1,p2] = Array.from(pts.values());
+      const d = dist(p1,p2);
+      const c = center(p1,p2);
+
+      if (lastDist){
+        const prev = cam.zoom;
+        const factor = d / lastDist;
+        cam.zoom = Math.max(0.5, Math.min(4, cam.zoom * factor));
+
+        // zoom about pinch center
+        const rect = canvas.getBoundingClientRect();
+        const cx = c.x - rect.left;
+        const cy = c.y - rect.top;
+
+        const worldX = cam.x + (cx / prev);
+        const worldY = cam.y + (cy / prev);
+
+        cam.x = worldX - (cx / cam.zoom);
+        cam.y = worldY - (cy / cam.zoom);
+
+        render();
+      }
+      lastDist = d;
+      lastCenter = c;
+    }
+  }, { passive: true });
+
+  function endTouch(e){
+    if (e.pointerType !== "touch") return;
+    pts.delete(e.pointerId);
+    if (pts.size < 2){
+      lastDist = null;
+      lastCenter = null;
+    }
+  }
+  canvas.addEventListener("pointerup", endTouch, { passive: true });
+  canvas.addEventListener("pointercancel", endTouch, { passive: true });
+})();
+
 render();
 
 canvas.addEventListener("wheel", e=>{
