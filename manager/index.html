@@ -49,7 +49,7 @@ header img{
   margin:0 auto 8px;
 }
 header .label{
-  font-size:24px;
+  font-size:14px;
   letter-spacing:3px;
   color:#b7b0e6;
 }
@@ -223,7 +223,9 @@ function renderProjects(){
   const list=document.getElementById("projectList");
   list.innerHTML="";
   getProjects().forEach(p=>{
-    const viewLabel = (p?.maps?.[0]?.viewMode) || (p?.data?.view) || p.view || "unset";
+        const activeId = p?.editor?.activeMapId || p?.data?.editor?.activeMapId || p?.maps?.[0]?.id;
+    const activeMap = (p?.maps||p?.data?.maps||[]).find(m=>m.id===activeId) || (p?.maps||p?.data?.maps||[])[0] || {};
+    const viewLabel = activeMap.viewMode || p?.data?.view || p.view || "unset";
     const tileLabel = (p?.data?.tileSize ?? p.tile ?? "?") + "px";
     const gridLabel = (p?.data?.grid?.preset ?? p.grid ?? "?");
     const card=document.createElement("div");
