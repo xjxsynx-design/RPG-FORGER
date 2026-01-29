@@ -134,6 +134,9 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
 .modal h3{margin:0 0 10px; color:var(--ember); letter-spacing:.5px;}
 .modal .muted{opacity:.85; line-height:1.35; margin:0 0 14px;}
 
+
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(20,18,28,.92);border:1px solid rgba(255,140,60,.55);padding:10px 14px;border-radius:12px;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.toast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -174,374 +177,246 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
 <div id="phaseLabel">PATCH C • PHASE 14F.1a</div>
 
 <script>
-const active = JSON.parse(localStorage.getItem("rpgdream_active_project")||"null");
-if(!active){ location.href="../manager/index.html"; }
+/* =========================================================
+   RPG FORGEWORKS — Editor (single-file, no external deps)
+   Fix focus: wire toolbar buttons + persist viewMode per map
+   Storage keys kept for compatibility with existing saves.
+========================================================= */
 
-// --- Resolve active map (supports older + newer project shapes) ---
-const maps = Array.isArray(active.maps) ? active.maps : [];
-const activeMapId = active.editor?.activeMapId || (maps[0]?.id);
-const activeMap = maps.find(m => m.id === activeMapId) || maps[0] || null;
+const STORAGE_PROJECTS_KEY = "rpgdream_projects";
+const STORAGE_ACTIVE_KEY   = "rpgdream_active_project";
 
-// Project-level default (older projects) + per-map viewMode (preferred)
-let resolvedView = (activeMap?.viewMode || active.data?.view || "").toLowerCase();
-if(resolvedView !== "angular" && resolvedView !== "top") resolvedView = "";
+let project = null;
+let activeMap = null;
 
-// Locking rule: once a map has a viewMode, treat it as permanent.
-const viewLocked = !!activeMap?.viewMode;
+let zoom = 1;
+let activeTool = "paint";
+let gridContrast = "normal"; // normal | high
 
-const viewModalBack = document.getElementById("viewModalBack");
-const pickTop = document.getElementById("pickTop");
-const pickAngular = document.getElementById("pickAngular");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-function saveActive(){
-  localStorage.setItem("rpgdream_active_project", JSON.stringify(active));
+function safeParse(json, fallback=null){
+  try { return JSON.parse(json); } catch { return fallback; }
 }
 
-/* -------------------------
-   Storage Helpers (Manager-compatible)
-------------------------- */
-function getProjects() {
-  return JSON.parse(localStorage.getItem('rpgdream_projects') || '[]');
+function getProjects(){
+  return safeParse(localStorage.getItem(STORAGE_PROJECTS_KEY), []) || [];
+}
+function saveProjects(arr){
+  localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(arr));
+}
+function saveActiveProject(p){
+  localStorage.setItem(STORAGE_ACTIVE_KEY, JSON.stringify(p));
+}
+function loadActiveProject(){
+  return safeParse(localStorage.getItem(STORAGE_ACTIVE_KEY), null);
 }
 
-function saveProjects(projects) {
-  localStorage.setItem('rpgdream_projects', JSON.stringify(projects));
+function backToManager(){
+  window.location.href = "../manager/index.html";
 }
 
-function upsertProject(project) {
-  if (!project || !project.id) return;
+function resolveActiveMap(p){
+  const maps = Array.isArray(p?.maps) ? p.maps : [];
+  if (!maps.length) return null;
+  const activeId = p?.editor?.activeMapId || maps[0].id;
+  return maps.find(m => m.id === activeId) || maps[0];
+}
+
+function persistProject(){
+  // persist active project copy
+  saveActiveProject(project);
+
+  // also update project list entry if present
   const projects = getProjects();
-  const idx = projects.findIndex(p => p.id === project.id);
+  const idx = projects.findIndex(x => x.id === project.id);
   if (idx >= 0) projects[idx] = project;
   else projects.unshift(project);
   saveProjects(projects);
 }
 
-function toast(msg) {
-  try {
-    const t = document.createElement('div');
-    t.textContent = msg;
-    t.style.position = 'fixed';
-    t.style.left = '50%';
-    t.style.top = '18px';
-    t.style.transform = 'translateX(-50%)';
-    t.style.padding = '10px 14px';
-    t.style.borderRadius = '12px';
-    t.style.background = 'rgba(20,20,30,0.85)';
-    t.style.border = '1px solid rgba(140,110,255,0.35)';
-    t.style.color = '#fff';
-    t.style.zIndex = 9999;
-    t.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 1200);
-  } catch (e) {}
+/* -------------------------
+   View Mode Modal
+------------------------- */
+function showViewModal(){
+  document.getElementById("viewModalBack").classList.remove("hidden");
 }
-
-function ensureViewSelected(){
-  if(resolvedView){
-    viewModalBack.style.display = "none";
-    return true;
-  }
-  // show modal
-  viewModalBack.style.display = "flex";
-  return false;
+function hideViewModal(){
+  document.getElementById("viewModalBack").classList.add("hidden");
 }
-
-function commitView(v){
-  const vv = v === "angular" ? "angular" : "top";
-  resolvedView = vv;
-  // set per-map viewMode (preferred)
-  if(activeMap){
-    activeMap.viewMode = vv;
-  }
-  // keep project default for backward compat
-  active.data = active.data || {};
-  active.data.view = vv;
-  saveActive();
-  viewModalBack.style.display = "none";
-  render();
+function setViewMode(mode){
+  if (!activeMap) return;
+  activeMap.viewMode = mode; // "top" | "angular"
+  persistProject();
+  hideViewModal();
+  draw();
 }
-
-pickTop.addEventListener("click", () => commitView("top"));
-pickAngular.addEventListener("click", () => commitView("angular"));
-
-ensureViewSelected();
-
-// Save button wiring (updates active project + projects list)
-const saveBtn = document.getElementById('saveBtn');
-if (saveBtn) {
-  saveBtn.addEventListener('click', () => {
-    try {
-      saveActive();
-      upsertProject(active);
-      toast('Saved');
-    } catch (e) {
-      console.error(e);
-      alert('Save failed.');
-    }
-  });
-}
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-
 
 /* -------------------------
-   TOOL WIRING (UI)
+   Grid + Canvas render
 ------------------------- */
-let currentTool = "paint";
-
-function setActiveTool(name){
-  currentTool = name;
-  document.querySelectorAll("#toolbar button").forEach(b=>{
-    const t=(b.dataset.tool||"").toLowerCase();
-    b.classList.toggle("active", t===name);
-  });
-
-  // open modals for tool types that are modal-driven
-  if (name === "region") openModal("regionModal");
-  if (name === "object") openModal("objectModal");
-  if (name === "music") openModal("musicModal");
+function setCanvasSize(){
+  canvas.width = 900;
+  canvas.height = 1200;
 }
 
-function openModal(id){
-  const el=document.getElementById(id);
-  if(!el) return;
-  el.classList.remove("hidden");
-}
-function closeModal(id){
-  const el=document.getElementById(id);
-  if(!el) return;
-  el.classList.add("hidden");
+function applyZoom(){
+  canvas.style.transformOrigin = "top left";
+  canvas.style.transform = `scale(${zoom})`;
+  document.getElementById("zoomResetBtn").textContent = `${Math.round(zoom*100)}%`;
 }
 
-function wireToolbar(){
-  // tag each button by its label once
-  document.querySelectorAll("#toolbar button").forEach(btn=>{
-    if(!btn.dataset.tool){
-      btn.dataset.tool = btn.textContent.trim().toLowerCase();
-    }
-    btn.addEventListener("click", ()=>{
-      const tool = (btn.dataset.tool||"").toLowerCase();
-      if(["paint","erase","pan","region","object","music"].includes(tool)){
-        setActiveTool(tool);
-      }
-    });
-  });
-
-  // modal close buttons
-  document.querySelectorAll("[data-close]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      closeModal(btn.getAttribute("data-close"));
-    });
-  });
-
-  // default
-  setActiveTool("paint");
-}
-
-function drawParchmentBackground(){
-  // Fill a parchment-like base so the grid sits on top (prevents white/blank canvas look)
-  const g = ctx.createLinearGradient(0,0,0,canvas.height);
-  g.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue("--parchment") || "#f3e6c8");
-  g.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue("--parchment2") || "#e8d7b2");
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-}
-
-const TILE = 32;
-let cam = { x:0, y:0, zoom:1 };
-
-function resize(){
- canvas.width = innerWidth;
- canvas.height = innerHeight - 120;
-}
-window.addEventListener("resize", resize);
-resize();
-
-// --- Grid Contrast Toggle ---
-let gridHigh = false;
-const gridBtn = document.getElementById("gridContrastBtn");
-function applyGridContrast(){
-  const cs = getComputedStyle(document.documentElement);
-  const normal = cs.getPropertyValue('--grid-normal').trim() || '#64748b';
-  const high = cs.getPropertyValue('--grid-high').trim() || '#8fa3b8';
-  document.documentElement.style.setProperty('--grid', gridHigh ? high : normal);
-  if(gridBtn) gridBtn.textContent = gridHigh ? "Grid: High" : "Grid: Normal";
-}
-if(gridBtn){
-  gridBtn.addEventListener("click", ()=>{
-    gridHigh = !gridHigh;
-    applyGridContrast();
-  });
-}
-applyGridContrast();
-
-
-function isoToScreen(x,y){
- return {
-  x: (x - y) * (TILE/2),
-  y: (x + y) * (TILE/4)
- };
+function getGridColors(){
+  if (gridContrast === "high") {
+    return { bg: "#efe7d1", line: "rgba(30,40,60,0.30)", line2: "rgba(30,40,60,0.55)" }; // parchment high
+  }
+  return { bg: "#151320", line: "rgba(140,140,190,0.18)", line2: "rgba(140,140,190,0.32)" }; // dark normal
 }
 
 function drawTopGrid(){
- const step = TILE * cam.zoom;
- ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
- for(let x=0;x<canvas.width;x+=step){
-  ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
- }
- for(let y=0;y<canvas.height;y+=step){
-  ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
- }
+  const { bg, line, line2 } = getGridColors();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const size = 32;
+  for (let x=0; x<=canvas.width; x+=size){
+    ctx.strokeStyle = (x%(size*4)===0) ? line2 : line;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+  }
+  for (let y=0; y<=canvas.height; y+=size){
+    ctx.strokeStyle = (y%(size*4)===0) ? line2 : line;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+  }
 }
 
 function drawAngularGrid(){
- ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
- const range = 40;
- for(let x=-range;x<=range;x++){
-  for(let y=-range;y<=range;y++){
-   const p = isoToScreen(x,y);
-   ctx.beginPath();
-   ctx.moveTo(p.x, p.y - TILE/4);
-   ctx.lineTo(p.x + TILE/2, p.y);
-   ctx.lineTo(p.x, p.y + TILE/4);
-   ctx.lineTo(p.x - TILE/2, p.y);
-   ctx.closePath();
-   ctx.stroke();
+  const { bg, line, line2 } = getGridColors();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const size = 32;
+  ctx.lineWidth = 1;
+
+  // diag /
+  for (let x = -canvas.height; x < canvas.width; x += size){
+    ctx.strokeStyle = (Math.round(x/size)%4===0) ? line2 : line;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + canvas.height, canvas.height);
+    ctx.stroke();
   }
- }
+  // diag \
+  for (let x = 0; x < canvas.width + canvas.height; x += size){
+    ctx.strokeStyle = (Math.round(x/size)%4===0) ? line2 : line;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x - canvas.height, canvas.height);
+    ctx.stroke();
+  }
 }
 
-function render(){
-  const view = (active?.data?.view === "angular") ? "angular" : "top";
- ctx.setTransform(1,0,0,1,0,0);
- ctx.clearRect(0,0,canvas.width,canvas.height);
+function draw(){
+  if (!activeMap) return;
+  const vm = (activeMap.viewMode || "").toLowerCase();
+  if (vm !== "top" && vm !== "angular"){
+    showViewModal();
+    drawTopGrid();
+    return;
+  }
+  document.getElementById("projectLabel").textContent =
+    `${project.name} — ${activeMap.name} (${vm})`;
 
- ctx.translate(canvas.width/2, canvas.height/2);
- ctx.scale(cam.zoom, cam.zoom);
- ctx.translate(-canvas.width/2 - cam.x, -canvas.height/2 - cam.y);
-
- if(view === "angular") drawAngularGrid();
- else drawTopGrid();
-
- requestAnimationFrame(render);
+  if (vm === "angular") drawAngularGrid();
+  else drawTopGrid();
 }
 
-// -------------------------
-// Zoom (mouse wheel + pinch)
-// -------------------------
-(function enableZoom(){
-  // Wheel zoom (desktop / trackpad)
-  canvas.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    const prev = cam.zoom;
-    const factor = e.deltaY < 0 ? 1.12 : 0.90;
-    cam.zoom = Math.max(0.5, Math.min(4, cam.zoom * factor));
+/* -------------------------
+   Toolbar wiring
+------------------------- */
+function setActiveTool(tool){
+  activeTool = tool;
+  document.querySelectorAll("#toolbar button[data-tool]").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.tool === tool);
+  });
+}
 
-    // Zoom around cursor so it feels natural
-    const rect = canvas.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
+function wireToolbar(){
+  // Tool buttons
+  document.querySelectorAll("#toolbar button[data-tool]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setActiveTool(btn.dataset.tool);
+    });
+  });
 
-    const worldX = cam.x + (cx / prev);
-    const worldY = cam.y + (cy / prev);
+  // Zoom buttons
+  document.getElementById("zoomOut").addEventListener("click", ()=>{
+    zoom = Math.max(0.5, Math.round((zoom - 0.1)*10)/10);
+    applyZoom();
+  });
+  document.getElementById("zoomIn").addEventListener("click", ()=>{
+    zoom = Math.min(3, Math.round((zoom + 0.1)*10)/10);
+    applyZoom();
+  });
+  document.getElementById("zoomResetBtn").addEventListener("click", ()=>{
+    zoom = 1;
+    applyZoom();
+  });
 
-    cam.x = worldX - (cx / cam.zoom);
-    cam.y = worldY - (cy / cam.zoom);
+  // Grid contrast toggle
+  document.getElementById("gridContrastBtn").addEventListener("click", ()=>{
+    gridContrast = (gridContrast === "normal") ? "high" : "normal";
+    document.getElementById("gridContrastBtn").textContent =
+      (gridContrast === "high") ? "Grid: High" : "Grid: Normal";
+    draw();
+  });
 
-    render();
-  }, { passive: false });
+  // Save
+  document.getElementById("saveBtn").addEventListener("click", ()=>{
+    persistProject();
+    const toast = document.getElementById("toast");
+    toast.textContent = "Saved";
+    toast.classList.add("show");
+    setTimeout(()=>toast.classList.remove("show"), 900);
+  });
+}
 
-  // Pinch zoom (touch)
-  const pts = new Map(); // pointerId -> {x,y}
-  let lastDist = null;
-  let lastCenter = null;
+/* -------------------------
+   View Modal wiring
+------------------------- */
+function wireViewModal(){
+  document.getElementById("pickTop").addEventListener("click", ()=>setViewMode("top"));
+  document.getElementById("pickAngular").addEventListener("click", ()=>setViewMode("angular"));
+}
 
-  function dist(a,b){
-    const dx = a.x-b.x, dy = a.y-b.y;
-    return Math.hypot(dx,dy);
+/* -------------------------
+   Bootstrap
+------------------------- */
+function bootstrap(){
+  project = loadActiveProject();
+  if (!project || !Array.isArray(project.maps) || project.maps.length === 0){
+    backToManager();
+    return;
   }
-  function center(a,b){ return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 }; }
-
-  canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch") {
-      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pts.size === 2){
-        const [p1,p2] = Array.from(pts.values());
-        lastDist = dist(p1,p2);
-        lastCenter = center(p1,p2);
-      }
-    }
-  }, { passive: true });
-
-  canvas.addEventListener("pointermove", (e) => {
-    if (e.pointerType !== "touch") return;
-    if (!pts.has(e.pointerId)) return;
-
-    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (pts.size === 2){
-      const [p1,p2] = Array.from(pts.values());
-      const d = dist(p1,p2);
-      const c = center(p1,p2);
-
-      if (lastDist){
-        const prev = cam.zoom;
-        const factor = d / lastDist;
-        cam.zoom = Math.max(0.5, Math.min(4, cam.zoom * factor));
-
-        // zoom about pinch center
-        const rect = canvas.getBoundingClientRect();
-        const cx = c.x - rect.left;
-        const cy = c.y - rect.top;
-
-        const worldX = cam.x + (cx / prev);
-        const worldY = cam.y + (cy / prev);
-
-        cam.x = worldX - (cx / cam.zoom);
-        cam.y = worldY - (cy / cam.zoom);
-
-        render();
-      }
-      lastDist = d;
-      lastCenter = c;
-    }
-  }, { passive: true });
-
-  function endTouch(e){
-    if (e.pointerType !== "touch") return;
-    pts.delete(e.pointerId);
-    if (pts.size < 2){
-      lastDist = null;
-      lastCenter = null;
-    }
+  activeMap = resolveActiveMap(project);
+  if (!activeMap){
+    backToManager();
+    return;
   }
-  canvas.addEventListener("pointerup", endTouch, { passive: true });
-  canvas.addEventListener("pointercancel", endTouch, { passive: true });
-})();
 
-render();
+  setCanvasSize();
+  applyZoom();
+  setActiveTool("paint");
 
-canvas.addEventListener("wheel", e=>{
- e.preventDefault();
- cam.zoom = Math.max(.5, Math.min(3, cam.zoom + (e.deltaY>0?-0.1:0.1)));
-},{passive:false});
+  wireToolbar();
+  wireViewModal();
 
-let panning=false, last={x:0,y:0};
-canvas.addEventListener("pointerdown", e=>{
- panning=true; last={x:e.clientX,y:e.clientY};
-});
-canvas.addEventListener("pointermove", e=>{
- if(panning){
-  cam.x += (last.x - e.clientX)/cam.zoom;
-  cam.y += (last.y - e.clientY)/cam.zoom;
-  last={x:e.clientX,y:e.clientY};
- }
-});
-canvas.addEventListener("pointerup", ()=>panning=false);
-canvas.addEventListener("pointerleave", ()=>panning=false);
+  draw();
+}
+
+document.addEventListener("DOMContentLoaded", bootstrap);
 </script>
 
 <!-- MODALS -->
@@ -569,5 +444,6 @@ canvas.addEventListener("pointerleave", ()=>panning=false);
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
 </body>
 </html>
