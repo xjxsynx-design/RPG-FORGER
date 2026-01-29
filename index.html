@@ -3,137 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPG DREAM</title>
+<title>RPG Forgeworks</title>
 <style>
-
-  :root{
-    --bg:#050507;
-    --panel:rgba(8,6,12,.45);
-    --panelBorder:rgba(255,255,255,.10);
-
-    --ember:#ff7a1a;      /* forge orange */
-    --steel:#3b3f52;      /* steel */
-    --slate:#5c6a7a;      /* slate blue-gray */
-    --active:#2f7a4a;     /* earthy green */
-    --neon:#39ff14;       /* selection outline */
-
-    --btnBg:#2f1f4a;      /* deep purple */
-    --btnBg2:#3a2a5a;
-    --btnText:#f2f2f2;
-  }
-
-  html, body { height: 100%; margin: 0; }
-  body {
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    color: white;
-    background: var(--bg) url("./assets/landing_bg.png") center/cover no-repeat fixed;
-    overflow: hidden;
-  }
-
-  /* Contrast overlay so the scene reads on any phone display */
-  body::before{
-    content:"";
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at center, rgba(0,0,0,.10) 0%, rgba(0,0,0,.75) 60%, rgba(0,0,0,.92) 100%),
-      linear-gradient(to bottom, rgba(0,0,0,.50), rgba(0,0,0,.80));
-    pointer-events:none;
-  }
-
-  /* Centered stack */
-  .wrap{
-    position: relative;
-    height: 100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 20px;
-  }
-
-  .card{
-    position: relative;
-    width: min(560px, 92vw);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap: 18px;
-    padding: 22px 18px 20px;
-    border-radius: 22px;
-    background: var(--panel);
-    border: 1px solid var(--panelBorder);
-    backdrop-filter: blur(10px);
-  }
-
-  /* logo */
-  .logo {
-    width: min(260px, 55vw);
-    height: auto;
-    opacity: 0;
-    transform: translateY(10px) scale(.98);
-    animation: logoIn 900ms ease-out 150ms forwards;
-    filter: drop-shadow(0 10px 22px rgba(0,0,0,.65));
-  }
-
-  /* button */
-  .enter {
-    appearance:none;
-    border: 2px solid rgba(255,122,26,.85);
-    background: linear-gradient(180deg, var(--btnBg2), var(--btnBg));
-    color: var(--btnText);
-    border-radius: 18px;
-    padding: 14px 22px;
-    font-size: 34px;
-    line-height: 1;
-    min-width: min(520px, 86vw);
-    box-shadow:
-      0 12px 26px rgba(0,0,0,.60),
-      0 0 22px rgba(255,122,26,.18);
-    cursor: pointer;
-
-    /* fade in after logo */
-    opacity: 0;
-    transform: translateY(12px);
-    animation: btnIn 700ms ease-out 1150ms forwards;
-  }
-
-  .enter:active{
-    transform: translateY(12px) scale(.98);
-    box-shadow:
-      0 10px 22px rgba(0,0,0,.55),
-      0 0 26px rgba(255,122,26,.25);
-  }
-
-  @keyframes logoIn {
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  @keyframes btnIn {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* chalkduster-ish: iOS-only Chalkduster, otherwise a legible fallback */
-  .chalk{
-    font-family: "Chalkduster","Marker Felt","Bradley Hand", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    letter-spacing: .5px;
-    text-transform: none;
-  }
-
-  /* subtle top/bottom safe area padding */
-  .safeTop{ padding-top: env(safe-area-inset-top); }
-  .safeBottom{ padding-bottom: env(safe-area-inset-bottom); }
-
+:root{
+  --bg:#050507;
+  --purple:#7b5cff;
+  --purple2:#5f46e6;
+  --forge:#ff7a18;
+  --ink:#e9e6ff;
+  --panel:#120f1f;
+  --panelBorder: rgba(123,92,255,.35);
+  --shadow: rgba(0,0,0,.55);
+  --radius:22px;
+  --font: Chalkduster, "Marker Felt", "Bradley Hand", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+html,body{height:100%;margin:0;}
+body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  overflow:hidden;
+}
+/* Background scene (brighter, sharper, higher contrast) */
+.scene{
+  position:fixed; inset:0;
+  background:
+    radial-gradient(1200px 800px at 50% 65%, rgba(255,122,24,.18), transparent 55%),
+    radial-gradient(900px 700px at 50% 85%, rgba(123,92,255,.14), transparent 60%),
+    linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.85)),
+    url("./assets/landing_bg.png");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat:no-repeat;
+  filter: contrast(1.15) brightness(1.12) saturate(1.06);
+  transform: scale(1.02); /* avoids edge seams on mobile */
+}
+/* Subtle vignette for legibility */
+.scene::after{
+  content:"";
+  position:absolute; inset:0;
+  background: radial-gradient(closest-side at 50% 55%, transparent 55%, rgba(0,0,0,.55) 100%);
+  pointer-events:none;
+}
+.hero{
+  position:relative;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.stack{
+  position:absolute;
+  left:50%;
+  top:56%;
+  transform:translate(-50%,-50%);
+  width:min(86vw, 520px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+}
+/* Button ABOVE logo (as requested) */
+.enter{
+  width:min(82vw, 420px);
+  border-radius: var(--radius);
+  border: 2px solid rgba(123,92,255,.55);
+  background: linear-gradient(180deg, rgba(123,92,255,.95), rgba(95,70,230,.92));
+  color: #f4f1ff;
+  font-family: var(--font);
+  font-size: 34px;
+  padding: 18px 18px;
+  box-shadow: 0 16px 40px var(--shadow), 0 0 0 6px rgba(255,122,24,.06);
+  opacity:0;
+  transform: translateY(8px);
+  animation: fadeUp .75s ease forwards;
+  animation-delay: 1.2s; /* logo first, then button */
+}
+.enter:active{ transform: translateY(10px) scale(.99); }
+.logo{
+  width:min(60vw, 320px);
+  max-width: 320px;
+  opacity:0;
+  transform: translateY(10px);
+  filter: drop-shadow(0 14px 34px rgba(0,0,0,.65));
+  animation: fadeUp .85s ease forwards;
+  animation-delay: .25s;
+}
+/* Align logo where the anvil is (center/bottom area of the scene) */
+@media (max-height: 740px){
+  .stack{ top:58%; }
+  .enter{ font-size: 30px; padding: 16px; }
+}
+@media (min-height: 820px){
+  .stack{ top:54%; }
+}
+@keyframes fadeUp{
+  to{ opacity:1; transform: translateY(0); }
+}
 </style>
 </head>
 
 <body>
-  <div class="wrap safeTop safeBottom">
-    <div class="card" role="presentation">
-      <img class="logo" src="./assets/rpg_forgeworks_logo.png" alt="RPG Forgeworks">
-      <button class="enter chalk" onclick="location.href='./manager/index.html'">
-        Enter RPG FORGEWORKS
-      </button>
-    </div>
+<div class="scene" aria-hidden="true"></div>
+
+<div class="hero">
+  <div class="stack">
+    <button class="enter" id="enterBtn" type="button">Enter RPG Forgeworks</button>
+    <img class="logo" src="./assets/rpg_forgeworks_logo.png" alt="RPG Forgeworks logo" />
   </div>
+</div>
+
+<script>
+  // Keep navigation simple & reliable
+  document.getElementById("enterBtn").addEventListener("click", () => {
+    window.location.href = "./manager/index.html";
+  });
+</script>
+
 </body>
 </html>
