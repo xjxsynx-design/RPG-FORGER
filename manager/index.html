@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPG DREAM MANAGER</title>
+<title>RPG Forgeworks — Manager</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;}
 input, select, textarea {max-width:100%;}
@@ -27,6 +27,14 @@ input, select, textarea {max-width:100%;}
   --earth:#4d7c59;
   --select:#22ff66;
   --warn:#f97316;
+
+  --purple: #7b5cff;
+
+  --purple2: #5f46e6;
+
+  --forge: #ff7a18;
+
+  --ink: #e9e6ff;
 }
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
 .hidden{display:none!important}
@@ -54,12 +62,12 @@ header .label{
   gap:14px;
 }
 button{font-family:var(--font-accent);background:var(--steel);border:1px solid var(--steel-border);color:var(--text);border-radius:14px;padding:10px 14px;font-size:14px}
-button.primary{background:var(--ember);border-color:transparent;color:#fff7ed}
+button.primary{background: linear-gradient(180deg, rgba(123,92,255,.95), rgba(95,70,230,.92));border-color:transparent;color:#fff7ed}
 button.primary:hover{background:var(--ember-hover)}
 button.secondary{background:transparent;border:1px solid var(--steel-border)}
 button.secondary{
   background:transparent;
-  border:1px solid #7b5cff;
+  border: 2px solid rgba(123,92,255,.45);
 }
 .card{
   background:#16102a;
