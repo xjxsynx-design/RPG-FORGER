@@ -244,31 +244,41 @@ function renderProjects(){
   });
 }
 function createProject(){
-  const project={
+  const maps = [{
+    id:"map_1",
+    name:"Map 1",
+    viewMode:null,
+    tiles:[],
+    regions:[],
+    objects:[]
+  }];
+
+  const project = {
     id:"p_"+Date.now(),
-    name:projectName.value||"Untitled Project",
+    name: projectName.value || "Untitled Project",
+    maps: maps,
     data:{
-      view:null, // set inside editor
-      tileSize:parseInt(tile.value,10),
-      grid:{ preset:grid.value }
+      view:null, // set inside editor (kept for backward compatibility)
+      tileSize: parseInt(tile.value,10),
+      grid:{ preset: grid.value }
     },
-    maps:[{
-      id:"map_1",
-      name:"Map 1",
-      viewMode:null,
-      tiles:[],
-      regions:[],
-      objects:[]
-    }],
     editor:{ activeMapId:"map_1" }
   };
-  const projects=getProjects();
+
+  const projects = getProjects();
   projects.unshift(project);
   saveProjects(projects);
   openEditor(project);
 }
 function renameProj(id){
   const projects=getProjects();
+  // MIGRATION: accept older shape with maps in data.maps
+  projects.forEach(p=>{
+    if(!Array.isArray(p.maps) && p.data && Array.isArray(p.data.maps)) p.maps = p.data.maps;
+    if(!p.data || typeof p.data!=="object") p.data = p.data||{};
+    if(Array.isArray(p.maps)) p.data.maps = p.maps;
+  });
+
   const p=projects.find(x=>x.id===id);
   const n=prompt("Rename project",p.name);
   if(n){p.name=n;saveProjects(projects);renderProjects();}
