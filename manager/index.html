@@ -1,451 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RPG Forgeworks — Manager</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RPG Forgeworks – Manager</title>
+
 <style>
-*,*::before,*::after{box-sizing:border-box;}
-input, select, textarea {max-width:100%;}
-:root{
-  --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-  --font-accent: Chalkduster,'Chalkboard SE','Marker Felt','Bradley Hand',cursive;
-
-  --bg:#000000;
-  --panel:#111317;
-  --panel-2:#161b22;
-
-  --text:#e7e7ea;
-  --muted:#b6b8c0;
-
-  --steel:#2e3440;
-  --steel-border:#6b7280;
-
-  --ember:#c2410c;
-  --ember-hover:#ea580c;
-
-  --earth:#4d7c59;
-  --select:#22ff66;
-  --warn:#f97316;
-
-  --purple: #7b5cff;
-
-  --purple2: #5f46e6;
-
-  --forge: #ff7a18;
-
-  --ink: #e9e6ff;
-}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
-.hidden{display:none!important}
-header{
-  text-align:center;
-  padding:16px 16px 8px;
-}
-header img{
-  max-width:220px;
-  width:60%;
-  display:block;
-  margin:0 auto 8px;
-}
-header .label{
-  font-size:14px;
-  letter-spacing:3px;
-  color:#b7b0e6;
+/* ===== BASE RESET ===== */
+* {
+  box-sizing: border-box;
 }
 
-.managerTitle{
-  width: min(92vw, 720px);
-  max-width: 92vw;
-  height: auto;
-  display:block;
-  margin: 10px auto 6px auto;
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,.55));
-  pointer-events:none;
-  user-select:none;
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: black;
 }
 
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-button{
-  cursor:pointer;
-  font-family: Chalkduster, "Chalkboard SE", system-ui, -apple-system;
-  letter-spacing: 1px;
-  color:#fff;
-  border-radius:18px;
-  padding:14px 20px;
-  font-size:18px;
-  border:2px solid rgba(255,122,24,.78);
-  background: linear-gradient(180deg, rgba(40,28,70,.94), rgba(14,10,28,.98));
-  box-shadow:
-    0 14px 34px rgba(0,0,0,.58),
-    0 0 0 6px rgba(255,122,24,.10),
-    0 0 26px rgba(255,122,24,.18),
-    inset 0 0 0 2px rgba(123,92,255,.26),
-    inset 0 12px 18px rgba(255,255,255,.05);
-  text-shadow: 0 2px 10px rgba(0,0,0,.55);
-  transition: transform .12s ease, filter .12s ease;
-}
-button:hover{transform:translateY(-1px);filter:brightness(1.05)}
-button:active{transform:translateY(0px);filter:brightness(.98)}
-button.primary{font-size:20px;padding:16px 22px}
-button.secondary{
-  background: rgba(14,10,28,.75);
-  box-shadow:
-    0 12px 28px rgba(0,0,0,.55),
-    0 0 0 5px rgba(255,122,24,.08),
-    0 0 22px rgba(255,122,24,.14),
-    inset 0 0 0 2px rgba(123,92,255,.22),
-    inset 0 10px 16px rgba(255,255,255,.04);
-}
-.card{
-  background:#16102a;
-  border-radius:14px;
-  padding:12px;
-}
-.meta{
-  font-size:13px;
-  color:#b7b0e6;
-}
-.row{
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-.row button{
-  flex:1;
-  padding:10px;
-  font-size:13px;
-}
-.backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:16px;
-}
-.modal{
-  width:100%;
-  max-width:420px;
-  background:#120b22;
-  border:1px solid #3a2b7a;
-  border-radius:18px;
-  padding:16px;
-}
-label{
-  font-size:13px;
-  color:#b7b0e6;
-}
-input,select{
-  width:100%;
-  padding:12px;
-  margin:8px 0 14px;
-  border-radius:10px;
-  border:1px solid #3a2b7a;
-  background:#120b22;
-  color:#efeaff;
-}
+/* ===== BACKGROUND ===== */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 
-/* Typography system: UI vs Accent */
-h1,h2,h3,
-button,.btn,.primary,.secondary,
-.modal h3,.modal h2,.modal-title,
-.toast,.pill,.label,.header-title{
-  font-family: var(--font-accent);
-  letter-spacing: 0.02em;
-}
-input,select,textarea,small,p,li,span,div{
-  font-family: var(--font-ui);
-}
-
-
-/* ===== Forgeworks v1 Visual Polish Bundle — Manager ===== */
-body{
-  background:
-    radial-gradient(circle at 50% 10%, rgba(255,122,24,0.10), rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.98) 100%),
-    url("../assets/manager_bg.jpg");
+  background-image: url("../assets/manager_bg.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
   background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center top;
-      background-attachment: fixed;
-  background-position: center;
-  background-attachment: fixed;
-}
-.manager-title{
-  width: min(96vw, 1100px);
-  margin: 22px auto 10px auto;
-  text-align: center;
-  font-family: "Trajan Pro","Cinzel","Georgia","Times New Roman",serif;
-  letter-spacing: 0.18em;
-  font-weight: 700;
-  font-size: clamp(22px, 4.6vw, 44px);
-  color: rgba(235,231,244,0.92);
-  text-shadow: 0 10px 22px rgba(0,0,0,0.55);
+  background-color: black;
 }
 
-
-/* Ember drift overlay */
-#emberCanvas{
-  position: fixed;
+/* ===== EMBER DRIFT (OPTIONAL BUT INCLUDED) ===== */
+.ember-layer {
+  position: absolute;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 4;
   pointer-events: none;
-  mix-blend-mode: screen;
-  opacity: 0.85;
-}
-@media (prefers-reduced-motion: reduce) {
-  #emberCanvas{ display:none; }
+  background-image: url("../assets/ember_drift.png");
+  background-repeat: repeat;
+  opacity: 0.35;
 }
 
+/* ===== UI CONTAINER ===== */
+.manager-ui {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+
+  width: 90%;
+  max-width: 420px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* ===== MANAGER TITLE IMAGE ===== */
+.manager-title {
+  width: 100%;
+  max-width: 380px;
+  height: auto;
+  margin-bottom: 26px;
+}
+
+/* ===== BUTTONS ===== */
+.manager-btn {
+  width: 100%;
+  padding: 18px 22px;
+
+  font-size: 20px;
+  font-family: inherit;
+  color: white;
+
+  background: linear-gradient(
+    to bottom,
+    #3b2b6f,
+    #2a1e4f
+  );
+
+  border-radius: 16px;
+  border: 2px solid #ff8c32;
+
+  box-shadow:
+    0 0 0 2px rgba(255,140,50,0.3),
+    0 8px 18px rgba(0,0,0,0.6);
+
+  cursor: pointer;
+}
+
+.manager-btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 2px rgba(255,140,50,0.4),
+    0 4px 12px rgba(0,0,0,0.6);
+}
 </style>
 </head>
+
 <body>
 
-<header>
-  <img class="managerTitle" src="../assets/manager_title.png" alt="Manager">
-</header>
+<!-- Embers -->
+<div class="ember-layer"></div>
 
-<div class="container">
-  <button onclick="openNew()">New Project</button>
-  <button class="secondary" onclick="openLoad()">Load From Local Storage</button>
+<!-- UI -->
+<div class="manager-ui">
+
+  <img
+    src="../assets/manager_title.png"
+    alt="Manager"
+    class="manager-title"
+  />
+
+  <button class="manager-btn" onclick="location.href='../editor/index.html'">
+    New Project
+  </button>
+
+  <button class="manager-btn" onclick="alert('Load not wired yet')">
+    Load from Local Storage
+  </button>
+
 </div>
-
-<!-- NEW PROJECT MODAL -->
-<div class="backdrop hidden" id="newModal">
-  <div class="modal">
-    <h3>Create New Project</h3>
-
-    <label>Project Name</label>
-    <input id="projectName">
-
-    <!-- View is selected inside the Editor (mandatory on first open). -->
-
-    <label>Grid Preset</label>
-    <select id="grid">
-      <option value="small">Small</option>
-      <option value="medium">Medium</option>
-      <option value="large">Large</option>
-    </select>
-
-    <label>Tile Size</label>
-    <select id="tile">
-      <option>16</option>
-      <option selected>32</option>
-      <option>48</option>
-      <option>64</option>
-      <option>96</option>
-      <option>128</option>
-    </select>
-
-    <button onclick="createProject()">Create</button>
-    <button class="secondary" onclick="closeNew()">Cancel</button>
-  </div>
-</div>
-
-<!-- LOAD PROJECT MODAL -->
-<div class="backdrop hidden" id="loadModal">
-  <div class="modal">
-    <h3>Local Projects</h3>
-    <div id="projectList"></div>
-    <button class="secondary" onclick="closeLoad()">Close</button>
-  </div>
-</div>
-
-<script>
-function getProjects(){
-  return JSON.parse(localStorage.getItem("rpgdream_projects")||"[]");
-}
-function saveProjects(p){
-  localStorage.setItem("rpgdream_projects",JSON.stringify(p));
-}
-function openEditor(project){
-  localStorage.setItem("rpgdream_active_project",JSON.stringify(project));
-  location.href="../editor/index.html";
-}
-function renderProjects(){
-  const list=document.getElementById("projectList");
-  list.innerHTML="";
-  getProjects().forEach(p=>{
-        const activeId = p?.editor?.activeMapId || p?.data?.editor?.activeMapId || p?.maps?.[0]?.id;
-    const activeMap = (p?.maps||p?.data?.maps||[]).find(m=>m.id===activeId) || (p?.maps||p?.data?.maps||[])[0] || {};
-    const viewLabel = activeMap.viewMode || p?.data?.view || p.view || "unset";
-    const tileLabel = (p?.data?.tileSize ?? p.tile ?? "?") + "px";
-    const gridLabel = (p?.data?.grid?.preset ?? p.grid ?? "?");
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`<strong>${p.name}</strong>
-      <div class="meta">${viewLabel} • ${tileLabel} • ${gridLabel}</div>`;
-    const row=document.createElement("div");
-    row.className="row";
-    row.innerHTML=`
-      <button onclick='openEditor(${JSON.stringify(p)})'>Continue</button>
-      <button class="secondary" onclick='renameProj("${p.id}")'>Rename</button>
-      <button class="secondary" onclick='deleteProj("${p.id}")'>Delete</button>
-    `;
-    card.appendChild(row);
-    list.appendChild(card);
-  });
-}
-function createProject(){
-  const maps = [{
-    id:"map_1",
-    name:"Map 1",
-    viewMode:null,
-    tiles:[],
-    regions:[],
-    objects:[]
-  }];
-
-  const project = {
-    id:"p_"+Date.now(),
-    name: projectName.value || "Untitled Project",
-    maps: maps,
-    data:{
-      view:null, // set inside editor (kept for backward compatibility)
-      tileSize: parseInt(tile.value,10),
-      grid:{ preset: grid.value }
-    },
-    editor:{ activeMapId:"map_1" }
-  };
-
-  const projects = getProjects();
-  projects.unshift(project);
-  saveProjects(projects);
-  openEditor(project);
-}
-function renameProj(id){
-  const projects=getProjects();
-  // MIGRATION: accept older shape with maps in data.maps
-  projects.forEach(p=>{
-    if(!Array.isArray(p.maps) && p.data && Array.isArray(p.data.maps)) p.maps = p.data.maps;
-    if(!p.data || typeof p.data!=="object") p.data = p.data||{};
-    if(Array.isArray(p.maps)) p.data.maps = p.maps;
-  });
-
-  const p=projects.find(x=>x.id===id);
-  const n=prompt("Rename project",p.name);
-  if(n){p.name=n;saveProjects(projects);renderProjects();}
-}
-function deleteProj(id){
-  if(confirm("Delete project?")){
-    saveProjects(getProjects().filter(p=>p.id!==id));
-    renderProjects();
-  }
-}
-function openNew(){ newModal.classList.remove("hidden"); }
-function closeNew(){ newModal.classList.add("hidden"); }
-function openLoad(){ renderProjects(); loadModal.classList.remove("hidden"); }
-function closeLoad(){ loadModal.classList.add("hidden"); }
-</script>
-
-
-  <canvas id="emberCanvas" aria-hidden="true"></canvas>
-
-<script>
-(() => {
-  const canvas = document.getElementById('emberCanvas');
-  if (!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-  let w=0,h=0, dpr = Math.max(1, window.devicePixelRatio || 1);
-
-  function resize() {
-    w = Math.floor(window.innerWidth);
-    h = Math.floor(window.innerHeight);
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  resize();
-  window.addEventListener('resize', resize, {passive:true});
-
-  const embers = [];
-  const maxEmbers = 120;
-  const spawnPerFrame = 2;
-
-  function rand(min,max) { return Math.random()*(max-min)+min; }
-
-  function spawn() {
-    if (embers.length >= maxEmbers) return;
-    // spawn near bottom and around hot areas (lower half)
-    const e = {
-      x: rand(0,w),
-      y: rand(h*0.45, h+40),
-      r: rand(0.8, 2.8),
-      vx: rand(-0.25, 0.25),
-      vy: rand(-1.4, -0.5),
-      life: rand(0.9, 1.8),
-      age: 0,
-      flick: rand(0, Math.PI*2),
-      hue: rand(20, 45) // orange -> amber
-    };
-    embers.push(e);
-  }
-
-  function draw() {
-    ctx.clearRect(0,0,w,h);
-
-    // soft glow pass
-    ctx.globalCompositeOperation = 'lighter';
-
-    for (let i=0;i<embers.length;i++) {
-      const e = embers[i];
-      e.age += 1/60;
-      e.x += e.vx;
-      e.y += e.vy;
-      e.vx += rand(-0.02,0.02);
-      e.vy += rand(-0.01,0.01);
-      e.flick += 0.15;
-
-      // drift wrap
-      if (e.x < -50) e.x = w+50;
-      if (e.x > w+50) e.x = -50;
-
-      const t = Math.min(1, e.age / e.life);
-      const alpha = (1-t) * (0.55 + 0.45*Math.sin(e.flick)*0.2);
-      const glow = e.r * 6;
-
-      // inner spark
-      ctx.fillStyle = `hsla(${e.hue}, 95%, 70%, ${alpha})`;
-      ctx.beginPath();
-      ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
-      ctx.fill();
-
-      // outer glow
-      const grad = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, glow);
-      grad.addColorStop(0, `hsla(${e.hue}, 100%, 75%, ${alpha*0.35})`);
-      grad.addColorStop(1, `hsla(${e.hue}, 100%, 55%, 0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(e.x, e.y, glow, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // cleanup + respawn
-    for (let i=embers.length-1;i>=0;i--) {
-      if (embers[i].age >= embers[i].life || embers[i].y < -60) embers.splice(i,1);
-    }
-    for (let i=0;i<spawnPerFrame;i++) spawn();
-    requestAnimationFrame(draw);
-  }
-
-  // kickstart with a few
-  for (let i=0;i<30;i++) spawn();
-  requestAnimationFrame(draw);
-})();
-</script>
 
 </body>
 </html>
