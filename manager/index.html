@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RPG Forgeworks — Manager</title>
 <style>
+  @keyframes emberDrift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -1200px;
+  }
+}
+
+.ember-layer {
+  animation: emberDrift 60s linear infinite;
+}
 *,*::before,*::after{box-sizing:border-box;}
 input, select, textarea {max-width:100%;}
 :root{
