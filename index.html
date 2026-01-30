@@ -119,76 +119,12 @@ body{
 }
 
 
-/* ========== Forgeworks v1.1 (Visual Polish) — Landing ========== */
-:root{
-  --forge-black:#050404;
-  --forge-metal:#141419;
-  --forge-purple:#2a0b3d;
-  --forge-purple-2:#3b0f58;
-  --forge-ember:#ff7a18;
-  --forge-ember-2:#ffb24a;
-  --ui-text:#e9e6f2;
-}
-body{
-  background: radial-gradient(circle at 50% 45%, rgba(255,122,24,0.10), rgba(0,0,0,0.85) 55%, rgba(0,0,0,0.98) 100%);
-  color: var(--ui-text);
-}
-.hero-bg{
-  position: fixed;
-  inset: 0;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  filter: contrast(1.18) brightness(1.12) saturate(1.08);
-  transform: scale(1.03);
-}
-.hero-vignette{
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(circle at 55% 55%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.62) 55%, rgba(0,0,0,0.92) 100%);
-  pointer-events:none;
-}
-.hero-stack{
-  position: relative;
-  z-index: 2;
-  width: min(520px, 92vw);
-  margin: 0 auto;
-  padding-top: min(46vh, 420px);
-  text-align: center;
-}
-.hero-logo{
-  width: min(360px, 78vw);
-  height: auto;
-  display: block;
-  margin: 0 auto;
-  filter: drop-shadow(0 10px 22px rgba(0,0,0,0.65)) drop-shadow(0 0 18px rgba(255,122,24,0.18));
-}
+/* ===== Forgeworks v1 Visual Polish Bundle — Landing ===== */
+.hero-bg{ filter: contrast(1.22) brightness(1.12) saturate(1.10); }
 .forge-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding: 12px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,122,24,0.35);
-  background: linear-gradient(180deg, rgba(59,15,88,0.92), rgba(21,10,36,0.92));
-  box-shadow:
-    0 10px 26px rgba(0,0,0,0.55),
-    0 0 0 1px rgba(255,122,24,0.10) inset,
-    0 0 28px rgba(255,122,24,0.18);
-  color: #fff;
-  text-decoration:none;
-  cursor:pointer;
-  user-select:none;
-  -webkit-tap-highlight-color: transparent;
-}
-.forge-btn:active{ transform: translateY(1px); }
-.fade-in{ opacity: 0; transform: translateY(6px); }
-.fade-in.show{ opacity: 1; transform: translateY(0); transition: opacity .7s ease, transform .7s ease; }
-.delay-1{ transition-delay: .15s; }
-.delay-2{ transition-delay: .95s; }
-@media (prefers-reduced-motion: reduce){
-  .fade-in, .fade-in.show{ transition: none !important; transform:none !important; opacity:1 !important; }
+  border: 1px solid rgba(255,122,24,0.38);
+  background: linear-gradient(180deg, rgba(59,15,88,0.94), rgba(21,10,36,0.94));
+  box-shadow: 0 10px 26px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,122,24,0.12) inset, 0 0 30px rgba(255,122,24,0.20);
 }
 
 </style>
@@ -211,40 +147,26 @@ body{
   });
 </script>
 
+
+<audio id="anvilSound" preload="auto"><source src="assets/sfx/anvil_strike.mp3" type="audio/mpeg"></audio>
 <script>
 
-/* Forgeworks v1.1 — landing sequencing + optional anvil strike SFX
-   Place sound at: assets/sfx/anvil_strike.mp3
-   Note: iOS often requires a user gesture before audio can play.
-*/
 (function(){
-  const bg = document.getElementById("heroBg");
-  if(bg){
-    bg.style.backgroundImage = "url(assets/landing_bg.png)";
-  }
-  const logo = document.querySelector(".hero-logo");
-  const btn  = document.querySelector(".forge-btn");
-
-  function playSfx(){
+  const btn = document.querySelector(".forge-btn") || document.querySelector("button");
+  if(!btn) return;
+  const target = btn.getAttribute("data-href") || "./manager/index.html";
+  btn.addEventListener("click", (e)=>{
+    e.preventDefault();
     try{
-      const audio = new Audio("assets/sfx/anvil_strike.mp3");
-      audio.volume = 0.7;
-      audio.play().catch(()=>{});
-    }catch(e){}
-  }
-
-  function show(){
-    if(logo){ logo.classList.add("show"); }
-    playSfx();
-    if(btn){ btn.classList.add("show"); }
-  }
-
-  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
-    if(logo) logo.classList.add("show");
-    if(btn) btn.classList.add("show");
-    return;
-  }
-  requestAnimationFrame(()=> setTimeout(show, 50));
+      const a = document.getElementById("anvilSound");
+      if(a){
+        a.currentTime = 0;
+        a.volume = 0.5;
+        a.play().catch(()=>{});
+      }
+    }catch(err){}
+    setTimeout(()=>{ window.location.href = target; }, 250);
+  }, {passive:false});
 })();
 
 </script>
