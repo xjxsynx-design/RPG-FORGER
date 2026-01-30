@@ -153,6 +153,45 @@ button,.btn,.primary,.secondary,
 input,select,textarea,small,p,li,span,div{
   font-family: var(--font-ui);
 }
+
+
+/* ========== Forgeworks v1.1 — Manager cinematic polish (visual only) ========== */
+:root{
+  --ui-text:#e9e6f2;
+  --forge-ember:#ff7a18;
+}
+body{
+  background: radial-gradient(circle at 50% 10%, rgba(255,122,24,0.10), rgba(0,0,0,0.92) 55%, rgba(0,0,0,0.98) 100%);
+  color: var(--ui-text);
+}
+.forge-btn, .primary, button.primary{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,122,24,0.35);
+  background: linear-gradient(180deg, rgba(59,15,88,0.92), rgba(21,10,36,0.92));
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,122,24,0.10) inset,
+    0 0 28px rgba(255,122,24,0.18);
+  color: #fff;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.forge-btn:active, .primary:active{ transform: translateY(1px); }
+.modal, .panel, .card{
+  background: rgba(10,10,14,0.78);
+  border: 1px solid rgba(255,122,24,0.18);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.65);
+  backdrop-filter: blur(10px);
+}
+.modal h3, .modal h2{
+  font-family: Chalkduster, "Chalkboard SE", "Marker Felt", system-ui, sans-serif;
+}
+input, select, textarea{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
 </style>
 </head>
 <body>
@@ -163,7 +202,7 @@ input,select,textarea,small,p,li,span,div{
 </header>
 
 <div class="container">
-  <button onclick="openNew()">New Project</button>
+  <button class="forge-btn" onclick="openNew()">New Project</button>
   <button class="secondary" onclick="openLoad()">Load From Local Storage</button>
 </div>
 
@@ -194,7 +233,7 @@ input,select,textarea,small,p,li,span,div{
       <option>128</option>
     </select>
 
-    <button onclick="createProject()">Create</button>
+    <button class="forge-btn" onclick="createProject()">Create</button>
     <button class="secondary" onclick="closeNew()">Cancel</button>
   </div>
 </div>
@@ -235,7 +274,7 @@ function renderProjects(){
     const row=document.createElement("div");
     row.className="row";
     row.innerHTML=`
-      <button onclick='openEditor(${JSON.stringify(p)})'>Continue</button>
+      <button class="forge-btn" onclick='openEditor(${JSON.stringify(p)})'>Continue</button>
       <button class="secondary" onclick='renameProj("${p.id}")'>Rename</button>
       <button class="secondary" onclick='deleteProj("${p.id}")'>Delete</button>
     `;
