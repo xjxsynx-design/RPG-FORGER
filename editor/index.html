@@ -372,7 +372,7 @@ function draw(){
     drawTopGrid();
     return;
   }
-  document.getElementById("projectLabel").textContent =
+  if(document.getElementById("projectLabel")) document.getElementById("projectLabel").textContent =
     `${project.name} — ${activeMap.name} (${vm})`;
 
   if (vm === "angular") drawAngularGrid();
@@ -398,11 +398,11 @@ function wireToolbar(){
   });
 
   // Zoom buttons
-  document.getElementById("zoomOut").addEventListener("click", ()=>{
+  document.getElementById("zoomOutBtn").addEventListener("click", ()=>{
     zoom = Math.max(0.5, Math.round((zoom - 0.1)*10)/10);
     applyZoom();
   });
-  document.getElementById("zoomIn").addEventListener("click", ()=>{
+  document.getElementById("zoomInBtn").addEventListener("click", ()=>{
     zoom = Math.min(3, Math.round((zoom + 0.1)*10)/10);
     applyZoom();
   });
