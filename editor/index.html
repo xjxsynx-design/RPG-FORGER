@@ -196,6 +196,38 @@ function normalizeViewMode(v) {
 const STORAGE_PROJECTS_KEY = "rpgdream_projects";
 const STORAGE_ACTIVE_KEY   = "rpgdream_active_project";
 
+
+function getActiveProject(){
+  return loadActiveProject();
+}
+
+function upsertProjectInList(p){
+  const projects = getProjects();
+  const idx = projects.findIndex(x => x.id === p.id);
+  if (idx >= 0) projects[idx] = p;
+  else projects.unshift(p);
+  saveProjects(projects);
+}
+
+function updateProjectLabel(p, m){
+  const el = document.getElementById("projectLabel");
+  if (!el) return;
+  const vm = (m?.viewMode || "unset");
+  el.textContent = `${p.name} — ${m.name} (${vm})`;
+}
+
+function initTopDownGrid(){
+  setCanvasSize();
+  applyZoom();
+  drawTopGrid();
+}
+
+function initAngularGrid(){
+  setCanvasSize();
+  applyZoom();
+  drawAngularGrid();
+}
+
 let project = null;
 let activeMap = null;
 
@@ -259,41 +291,37 @@ function hideViewModal(){
 function setViewMode(mode) {
   try {
     mode = normalizeViewMode(mode);
+    // Load & normalize global state
+    project = getActiveProject();
+    if (!project) return backToManager();
 
-    // Resolve active project/map fresh each time (avoids stale refs)
-    const project = getActiveProject();
-    if (!project || !Array.isArray(project.maps) || !project.maps.length) {
-      // No project -> go back to manager
-      window.location.href = "../manager/index.html";
-      return;
+    // Legacy compatibility: allow maps under project.data.maps
+    if (!Array.isArray(project.maps) || !project.maps.length) {
+      const legacyMaps = project?.data?.maps;
+      if (Array.isArray(legacyMaps) && legacyMaps.length) project.maps = legacyMaps;
     }
 
-    const activeMap = resolveActiveMap(project);
-    if (!activeMap) {
-      window.location.href = "../manager/index.html";
-      return;
-    }
+    activeMap = resolveActiveMap(project);
+    if (!activeMap) return backToManager();
 
     activeMap.viewMode = mode;
-    // Also keep a convenience pointer for UI/tooling
+
     project.editor = project.editor || {};
     project.editor.activeMapId = activeMap.id;
 
-    // Persist before hiding modal so reload works
+    // Persist to active + list
     saveActiveProject(project);
     upsertProjectInList(project);
 
     hideViewModal();
 
-    // Re-init renderer
-    const vm = normalizeViewMode(activeMap.viewMode);
-    if (vm === "angular") initAngularGrid();
+    // Render
+    if (mode === "angular") initAngularGrid();
     else initTopDownGrid();
 
     updateProjectLabel(project, activeMap);
   } catch (err) {
     console.error("setViewMode error:", err);
-    // Keep modal visible so user can retry
     alert("View mode could not be set. Please refresh and try again.");
   }
 }
@@ -442,20 +470,22 @@ function wireViewModal(){
 ------------------------- */
 
 function bootstrap() {
-  const project = getActiveProject();
+  project = getActiveProject();
 
   // No project -> back to manager
-  if (!project || !Array.isArray(project.maps) || !project.maps.length) {
-    window.location.href = "../manager/index.html";
-    return;
+  if (!project) return backToManager();
+
+  // Legacy compatibility: allow maps under project.data.maps
+  if (!Array.isArray(project.maps) || !project.maps.length) {
+    const legacyMaps = project?.data?.maps;
+    if (Array.isArray(legacyMaps) && legacyMaps.length) project.maps = legacyMaps;
   }
 
+  if (!Array.isArray(project.maps) || !project.maps.length) return backToManager();
+
   // Resolve active map (with fallback)
-  const activeMap = resolveActiveMap(project);
-  if (!activeMap) {
-    window.location.href = "../manager/index.html";
-    return;
-  }
+  activeMap = resolveActiveMap(project);
+  if (!activeMap) return backToManager();
 
   // Normalize view mode
   activeMap.viewMode = normalizeViewMode(activeMap.viewMode);
@@ -467,6 +497,8 @@ function bootstrap() {
   // If missing view mode, force modal. Otherwise render immediately.
   if (!activeMap.viewMode) {
     showViewModal();
+    // draw a default grid behind modal so user sees something
+    initTopDownGrid();
   } else {
     hideViewModal();
     if (activeMap.viewMode === "angular") initAngularGrid();
@@ -476,6 +508,7 @@ function bootstrap() {
   updateProjectLabel(project, activeMap);
 }
 
+document.addEventListener('DOMContentLoaded', bootstrap);
 </script>
 
 <!-- MODALS -->
