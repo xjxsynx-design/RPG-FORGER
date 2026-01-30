@@ -139,49 +139,18 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
 .toast.show{opacity:1;}
 
 
-/* ========== Forgeworks v1.1 — Editor: Clean Pro Tool with Cinematic Accents ========== */
-:root{
-  --chrome-bg: #0b0b10;
-  --chrome-panel: rgba(16,16,24,0.86);
-  --chrome-border: rgba(255,122,24,0.14);
-  --text: #e9e6f2;
-  --muted: rgba(233,230,242,0.72);
-  --accent-ember:#ff7a18;
-  --accent-ember2:#ffb24a;
-  --active-tool:#5f8f6b;
-  --select-neon:#22ff66;
-  --warn:#f97316;
-  --grid-default:#64748b;
-  --grid-high:#9fb4c9;
-  --parchment1:#f3e8c8;
-  --parchment2:#efe1b2;
-}
-body{ background: var(--chrome-bg); color: var(--text); }
-#toolbar, .toolbar, .topbar{
-  background: var(--chrome-panel);
-  border-bottom: 1px solid var(--chrome-border);
+/* ===== Forgeworks v1 Visual Polish Bundle — Editor chrome ===== */
+#toolbar{
+  background: rgba(16,16,24,0.88);
+  border-bottom: 1px solid rgba(255,122,24,0.14);
   box-shadow: 0 10px 30px rgba(0,0,0,0.45);
   backdrop-filter: blur(10px);
 }
-#toolbar button, .toolbar button{
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  border-radius: 12px;
-}
-#toolbar button.active, .tool-active{
+#toolbar button.active{
   background: rgba(95,143,107,0.22);
   border: 1px solid rgba(95,143,107,0.45);
-  box-shadow: 0 0 18px rgba(255,122,24,0.10);
 }
-.modal h2, .modal h3, .modal .title{
-  font-family: Chalkduster, "Chalkboard SE", "Marker Felt", system-ui, sans-serif;
-  color: var(--accent-ember2);
-}
-.modal .error, .modal .warning{ color: var(--warn); }
-#canvasWrap, .canvas-wrap, #viewport{
-  background: radial-gradient(circle at 50% 40%, var(--parchment1), var(--parchment2));
-}
-canvas{ background: transparent; }
-.phase-label{ opacity:.8; font-size:12px; color: var(--muted); }
+.modal h2, .modal h3{ color: rgba(255,178,74,0.95); }
 
 </style>
 </head>
