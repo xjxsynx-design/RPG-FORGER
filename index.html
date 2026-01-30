@@ -1,541 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RPG Forgeworks — Editor</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG Forgeworks</title>
 <style>
 :root{
-  --font-ui: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-  --font-accent: Chalkduster,'Chalkboard SE','Marker Felt','Bradley Hand',cursive;
-
-  /* Forgeworks Theme */
-  --bg:#000000;
-  --panel:#111317;
-  --panel-2:#161b22;
-
-  --text:#e7e7ea;
-  --muted:#b6b8c0;
-
-  --steel:#2e3440;
-  --steel-border:#6b7280;
-
-  --ember:#c2410c;
-  --ember-hover:#ea580c;
-
-  --earth:#4d7c59;
-
-  --select:#22ff66;           /* selection outline neon green */
-  --warn:#f97316;             /* forge orange for warnings/modals */
-
-  --grid-normal:#64748b;      /* slate blue-gray default */
-  --grid-high:#8fa3b8;
-  --grid: var(--grid-normal);
+  --bg:#050507;
+  --purple:#7b5cff;
+  --purple2:#5f46e6;
+  --forge:#ff7a18;
+  --ink:#e9e6ff;
+  --panel:#120f1f;
+  --panelBorder: rgba(123,92,255,.35);
+  --shadow: rgba(0,0,0,.55);
+  --radius:22px;
+  --font: Chalkduster, "Marker Felt", "Bradley Hand", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
-#topbar .spacer{flex:1}
-button{background:var(--steel);border:1px solid var(--steel-border);border-radius:12px;color:var(--text);padding:8px 12px;font-size:13px;white-space:nowrap;font-family:var(--font-accent)}
-button:hover{filter:brightness(1.05)}
-button.primary,#saveBtn{background:var(--ember);border-color:transparent;color:#fff7ed}
-button.primary:hover,#saveBtn:hover{background:var(--ember-hover)}
-button.secondary{background:transparent;border:1px solid var(--steel-border);color:var(--text)}
-button.active{background:var(--earth);border-color:transparent;outline:2px solid var(--select)}
-
-#toolbar{
- display:flex;gap:8px;padding:8px;background:#120b22;
- border-bottom:1px solid var(--stroke);
- overflow-x:auto;white-space:nowrap
+html,body{height:100%;margin:0;}
+body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  overflow:hidden;
 }
-#toolbar button{flex-shrink:0}
-#toolbar button.active{outline:2px solid var(--neon);}
-
-
-canvas{display:block;touch-action:none}
-
-/* --- View select modal (mandatory on first open) --- */
-#viewModalBack{position:fixed;inset:0;background:rgba(0,0,0,.55);
- display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
-#viewModal{width:min(520px,100%);background:var(--panel);border:1px solid var(--stroke);
- border-radius:18px;padding:16px}
-#viewModal h3{margin:0 0 6px 0}
-#viewModal p{margin:0 0 12px 0;opacity:.9;line-height:1.35}
-#viewModal .row{display:flex;gap:10px;flex-wrap:wrap}
-#viewModal .row button{flex:1;min-width:140px}
-#viewModal .note{margin-top:10px;font-size:12px;opacity:.85}
-
-#phaseLabel{
- position:fixed;left:50%;bottom:6px;transform:translateX(-50%);
- color:#7bffcc;font-weight:700;letter-spacing:.08em;
- text-shadow:0 0 6px rgba(123,255,204,.6)
-}
-
-/* Typography system: UI vs Accent */
-h1,h2,h3,
-button,.btn,.primary,.secondary,
-.modal h3,.modal h2,.modal-title,
-.toast,.pill,.label,.header-title{
-  font-family: var(--font-accent);
-  letter-spacing: 0.02em;
-}
-input,select,textarea,small,p,li,span,div{
-  font-family: var(--font-ui);
-}
-.hidden{display:none!important}
-#viewModalBack{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
-#viewModal{background:var(--panel-2);border:1px solid var(--steel-border);border-radius:16px;padding:16px;max-width:420px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-#viewModal h3{margin:0 0 8px 0;color:var(--warn);font-family:var(--font-accent)}
-#viewModal p{margin:0 0 12px 0;color:var(--text);font-family:var(--font-ui)}
-#viewModal .note{margin-top:12px;color:var(--warn);font-size:12px;line-height:1.2;font-family:var(--font-ui)}
-
-
-/* =========================
-   THEME TOKENS (Forgeworks)
-========================= */
-:root{
-  --bg:#07060b;
-  --panel:#150f28;
-  --panel2:#120b22;
-  --steel:#5b6775;
-  --ember:#f08a2b;
-  --earthy:#4c8a5a; /* active tool */
-  --neon:#37ff6b;   /* selection outline */
-  --grid:#495a78;   /* slate blue-gray */
-  --gridHi:#8da3c7; /* high contrast */
-  --parchment:#f3e6c8;
-  --parchment2:#e8d7b2;
-  --text:#e9e6f2;
-}
-
-body{background:var(--bg); color:var(--text);}
-
-/* Ensure Chalkduster everywhere it matters */
-body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
-
-/* Modals */
-.backdrop{
+/* Background scene (brighter, sharper, higher contrast) */
+.scene{
   position:fixed; inset:0;
-  background: rgba(0,0,0,.55);
-  display:flex; align-items:center; justify-content:center;
-  padding:16px;
-  z-index:9999;
+  background:
+    radial-gradient(1200px 800px at 50% 65%, rgba(255,122,24,.18), transparent 55%),
+    radial-gradient(900px 700px at 50% 85%, rgba(123,92,255,.14), transparent 60%),
+    linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.85)),
+    url("./assets/landing_bg.png");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat:no-repeat;
+  filter: contrast(1.15) brightness(1.12) saturate(1.06);
+  transform: scale(1.02); /* avoids edge seams on mobile */
 }
-.backdrop.hidden{display:none;}
-.modal{
-  width:min(520px, 92vw);
-  max-height: 85vh;
-  overflow:auto;
-  background: rgba(21,15,40,.92);
-  border:2px solid rgba(240,138,43,.45);
-  border-radius:18px;
-  padding:18px 18px 16px;
-  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+/* Subtle vignette for legibility */
+.scene::after{
+  content:"";
+  position:absolute; inset:0;
+  background: radial-gradient(closest-side at 50% 55%, transparent 55%, rgba(0,0,0,.55) 100%);
+  pointer-events:none;
 }
-.modal h3{margin:0 0 10px; color:var(--ember); letter-spacing:.5px;}
-.modal .muted{opacity:.85; line-height:1.35; margin:0 0 14px;}
+.hero{
+  position:relative;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.stack{
+  position:absolute;
+  left:50%;
+  top:56%;
+  transform:translate(-50%,-50%);
+  width:min(86vw, 520px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+}
+/* Button ABOVE logo (as requested) */
+.enter{
+  width:min(82vw, 420px);
+  border-radius: var(--radius);
+  border: 2px solid rgba(255,122,24,.78);
+  background: linear-gradient(180deg, rgba(40,28,70,.94), rgba(14,10,28,.98));
+  color: #ffffff;
+  font-family: var(--font);
+  font-size: 34px;
+  padding: 18px 18px;
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.65),
+    0 0 0 6px rgba(255,122,24,.12),
+    0 0 26px rgba(255,122,24,.22);
+  text-shadow: 0 2px 10px rgba(0,0,0,.55);
+  position: relative;
+  opacity:0;
+  transform: translateY(8px);
+  animation: fadeUp .75s ease forwards;
+  animation-delay: 1.2s; /* logo first, then button */
+}
+.enter::before{
+  content:"";
+  position:absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 0 0 2px rgba(123,92,255,.28),
+    inset 0 12px 22px rgba(255,255,255,.06),
+    inset 0 -10px 22px rgba(0,0,0,.35);
+  pointer-events:none;
+}
+.enter:hover{ filter: brightness(1.06); }
+.enter:active{ transform: translateY(10px) scale(.99); }
+.logo{
+  width:min(60vw, 320px);
+  max-width: 320px;
+  opacity:0;
+  transform: translateY(10px);
+  filter: drop-shadow(0 14px 34px rgba(0,0,0,.65));
+  animation: fadeUp .85s ease forwards;
+  animation-delay: .25s;
+}
+/* Align logo where the anvil is (center/bottom area of the scene) */
+@media (max-height: 740px){
+  .stack{ top:58%; }
+  .enter{ font-size: 30px; padding: 16px; }
+}
+@media (min-height: 820px){
+  .stack{ top:54%; }
+}
+@keyframes fadeUp{
+  to{ opacity:1; transform: translateY(0); }
+}
 
 
-.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(20,18,28,.92);border:1px solid rgba(255,140,60,.55);padding:10px 14px;border-radius:12px;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s ease;}
-.toast.show{opacity:1;}
+/* ========== Forgeworks v1.1 (Visual Polish) — Landing ========== */
+:root{
+  --forge-black:#050404;
+  --forge-metal:#141419;
+  --forge-purple:#2a0b3d;
+  --forge-purple-2:#3b0f58;
+  --forge-ember:#ff7a18;
+  --forge-ember-2:#ffb24a;
+  --ui-text:#e9e6f2;
+}
+body{
+  background: radial-gradient(circle at 50% 45%, rgba(255,122,24,0.10), rgba(0,0,0,0.85) 55%, rgba(0,0,0,0.98) 100%);
+  color: var(--ui-text);
+}
+.hero-bg{
+  position: fixed;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: contrast(1.18) brightness(1.12) saturate(1.08);
+  transform: scale(1.03);
+}
+.hero-vignette{
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 55% 55%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.62) 55%, rgba(0,0,0,0.92) 100%);
+  pointer-events:none;
+}
+.hero-stack{
+  position: relative;
+  z-index: 2;
+  width: min(520px, 92vw);
+  margin: 0 auto;
+  padding-top: min(46vh, 420px);
+  text-align: center;
+}
+.hero-logo{
+  width: min(360px, 78vw);
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,0.65)) drop-shadow(0 0 18px rgba(255,122,24,0.18));
+}
+.forge-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,122,24,0.35);
+  background: linear-gradient(180deg, rgba(59,15,88,0.92), rgba(21,10,36,0.92));
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,122,24,0.10) inset,
+    0 0 28px rgba(255,122,24,0.18);
+  color: #fff;
+  text-decoration:none;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+.forge-btn:active{ transform: translateY(1px); }
+.fade-in{ opacity: 0; transform: translateY(6px); }
+.fade-in.show{ opacity: 1; transform: translateY(0); transition: opacity .7s ease, transform .7s ease; }
+.delay-1{ transition-delay: .15s; }
+.delay-2{ transition-delay: .95s; }
+@media (prefers-reduced-motion: reduce){
+  .fade-in, .fade-in.show{ transition: none !important; transform:none !important; opacity:1 !important; }
+}
+
 </style>
 </head>
+
 <body>
+<div class="scene" aria-hidden="true"></div>
 
-<div id="topbar">
- <strong>Editor</strong>
- <div class="spacer"></div>
- <button class="secondary" id="zoomOutBtn">−</button>
-      <button class="secondary" id="zoomInBtn">+</button>
-      <button class="secondary" id="zoomResetBtn">100%</button>
-      <button id="saveBtn">Save</button>
- <button id="gridContrastBtn" class="secondary">Grid: Normal</button>
-</div>
-
-<div id="toolbar">
- <button class="active" data-tool="paint">Paint</button>
- <button class="secondary" data-tool="erase">Erase</button>
- <button class="secondary" data-tool="pan">Pan</button>
- <button class="secondary" data-tool="region">Region</button>
- <button class="secondary" data-tool="object">Object</button>
- <button class="secondary" data-tool="music">Music</button>
-</div>
-
-<canvas id="canvas"></canvas>
-
-<!-- Mandatory view selection (only shown if this map has no viewMode yet) -->
-<div id="viewModalBack">
-  <div id="viewModal">
-    <h3>Select view for this map</h3>
-    <p>This map needs a view mode before editing can begin.</p>
-    <div class="row">
-      <button id="pickTop" type="button" onclick="setViewMode(\'top\')">Top</button>
-      <button id="pickAngular" type="button" onclick="setViewMode(\'angular\')" class="secondary">Angular</button>
-    </div>
-    <div class="note">Once selected, this map's view cannot be changed until a new map is created.</div>
+<div class="hero">
+  <div class="stack">
+    <button class="enter" id="enterBtn" type="button">Enter RPG Forgeworks</button>
+    <img class="logo" src="./assets/rpg_forgeworks_logo.png" alt="RPG Forgeworks logo" />
   </div>
 </div>
-<div id="phaseLabel">PATCH C • PHASE 14F.1a</div>
+
+<script>
+  // Keep navigation simple & reliable
+  document.getElementById("enterBtn").addEventListener("click", () => {
+    window.location.href = "./manager/index.html";
+  });
+</script>
 
 <script>
 
-function normalizeViewMode(v) {
-  if (!v) return "";
-  const s = String(v).trim().toLowerCase();
-  if (s === "angular" || s === "iso" || s === "isometric") return "angular";
-  if (s === "top" || s === "topdown" || s === "top-down" || s === "orthographic") return "top";
-  if (s === "unset" || s === "none") return "";
-  return s;
-}
-
-/* =========================================================
-   RPG FORGEWORKS — Editor (single-file, no external deps)
-   Fix focus: wire toolbar buttons + persist viewMode per map
-   Storage keys kept for compatibility with existing saves.
-========================================================= */
-
-const STORAGE_PROJECTS_KEY = "rpgdream_projects";
-const STORAGE_ACTIVE_KEY   = "rpgdream_active_project";
-
-
-function getActiveProject(){
-  return loadActiveProject();
-}
-
-function upsertProjectInList(p){
-  const projects = getProjects();
-  const idx = projects.findIndex(x => x.id === p.id);
-  if (idx >= 0) projects[idx] = p;
-  else projects.unshift(p);
-  saveProjects(projects);
-}
-
-function updateProjectLabel(p, m){
-  const el = document.getElementById("projectLabel");
-  if (!el) return;
-  const vm = (m?.viewMode || "unset");
-  el.textContent = `${p.name} — ${m.name} (${vm})`;
-}
-
-function initTopDownGrid(){
-  setCanvasSize();
-  applyZoom();
-  drawTopGrid();
-}
-
-function initAngularGrid(){
-  setCanvasSize();
-  applyZoom();
-  drawAngularGrid();
-}
-
-let project = null;
-let activeMap = null;
-
-let zoom = 1;
-let activeTool = "paint";
-let gridContrast = "normal"; // normal | high
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-function safeParse(json, fallback=null){
-  try { return JSON.parse(json); } catch { return fallback; }
-}
-
-function getProjects(){
-  return safeParse(localStorage.getItem(STORAGE_PROJECTS_KEY), []) || [];
-}
-function saveProjects(arr){
-  localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(arr));
-}
-function saveActiveProject(p){
-  localStorage.setItem(STORAGE_ACTIVE_KEY, JSON.stringify(p));
-}
-function loadActiveProject(){
-  return safeParse(localStorage.getItem(STORAGE_ACTIVE_KEY), null);
-}
-
-function backToManager(){
-  window.location.href = "../manager/index.html";
-}
-
-function resolveActiveMap(p){
-  const maps = Array.isArray(p?.maps) ? p.maps : [];
-  if (!maps.length) return null;
-  const activeId = p?.editor?.activeMapId || maps[0].id;
-  return maps.find(m => m.id === activeId) || maps[0];
-}
-
-function persistProject(){
-  // persist active project copy
-  saveActiveProject(project);
-
-  // also update project list entry if present
-  const projects = getProjects();
-  const idx = projects.findIndex(x => x.id === project.id);
-  if (idx >= 0) projects[idx] = project;
-  else projects.unshift(project);
-  saveProjects(projects);
-}
-
-/* -------------------------
-   View Mode Modal
-------------------------- */
-function showViewModal(){
-  document.getElementById("viewModalBack").classList.remove("hidden");
-}
-function hideViewModal(){
-  document.getElementById("viewModalBack").classList.add("hidden");
-}
-
-function setViewMode(mode) {
-  try {
-    mode = normalizeViewMode(mode);
-    // Load & normalize global state
-    project = getActiveProject();
-    if (!project) return backToManager();
-
-    // Legacy compatibility: allow maps under project.data.maps
-    if (!Array.isArray(project.maps) || !project.maps.length) {
-      const legacyMaps = project?.data?.maps;
-      if (Array.isArray(legacyMaps) && legacyMaps.length) project.maps = legacyMaps;
-    }
-
-    activeMap = resolveActiveMap(project);
-    if (!activeMap) return backToManager();
-
-    activeMap.viewMode = mode;
-
-    project.editor = project.editor || {};
-    project.editor.activeMapId = activeMap.id;
-
-    // Persist to active + list
-    saveActiveProject(project);
-    upsertProjectInList(project);
-
-    hideViewModal();
-
-    // Render
-    if (mode === "angular") initAngularGrid();
-    else initTopDownGrid();
-
-    updateProjectLabel(project, activeMap);
-  } catch (err) {
-    console.error("setViewMode error:", err);
-    alert("View mode could not be set. Please refresh and try again.");
+/* Forgeworks v1.1 — landing sequencing + optional anvil strike SFX
+   Place sound at: assets/sfx/anvil_strike.mp3
+   Note: iOS often requires a user gesture before audio can play.
+*/
+(function(){
+  const bg = document.getElementById("heroBg");
+  if(bg){
+    bg.style.backgroundImage = "url(assets/landing_bg.png)";
   }
-}
+  const logo = document.querySelector(".hero-logo");
+  const btn  = document.querySelector(".forge-btn");
 
-
-/* -------------------------
-   Grid + Canvas render
-------------------------- */
-function setCanvasSize(){
-  canvas.width = 900;
-  canvas.height = 1200;
-}
-
-function applyZoom(){
-  canvas.style.transformOrigin = "top left";
-  canvas.style.transform = `scale(${zoom})`;
-  document.getElementById("zoomResetBtn").textContent = `${Math.round(zoom*100)}%`;
-}
-
-function getGridColors(){
-  if (gridContrast === "high") {
-    return { bg: "#efe7d1", line: "rgba(30,40,60,0.30)", line2: "rgba(30,40,60,0.55)" }; // parchment high
+  function playSfx(){
+    try{
+      const audio = new Audio("assets/sfx/anvil_strike.mp3");
+      audio.volume = 0.7;
+      audio.play().catch(()=>{});
+    }catch(e){}
   }
-  return { bg: "#151320", line: "rgba(140,140,190,0.18)", line2: "rgba(140,140,190,0.32)" }; // dark normal
-}
 
-function drawTopGrid(){
-  const { bg, line, line2 } = getGridColors();
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = bg;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  const size = 32;
-  for (let x=0; x<=canvas.width; x+=size){
-    ctx.strokeStyle = (x%(size*4)===0) ? line2 : line;
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+  function show(){
+    if(logo){ logo.classList.add("show"); }
+    playSfx();
+    if(btn){ btn.classList.add("show"); }
   }
-  for (let y=0; y<=canvas.height; y+=size){
-    ctx.strokeStyle = (y%(size*4)===0) ? line2 : line;
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
-  }
-}
 
-function drawAngularGrid(){
-  const { bg, line, line2 } = getGridColors();
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = bg;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  const size = 32;
-  ctx.lineWidth = 1;
-
-  // diag /
-  for (let x = -canvas.height; x < canvas.width; x += size){
-    ctx.strokeStyle = (Math.round(x/size)%4===0) ? line2 : line;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + canvas.height, canvas.height);
-    ctx.stroke();
-  }
-  // diag \
-  for (let x = 0; x < canvas.width + canvas.height; x += size){
-    ctx.strokeStyle = (Math.round(x/size)%4===0) ? line2 : line;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x - canvas.height, canvas.height);
-    ctx.stroke();
-  }
-}
-
-function draw(){
-  if (!activeMap) return;
-  const vm = (activeMap.viewMode || "").toLowerCase();
-  if (vm !== "top" && vm !== "angular"){
-    showViewModal();
-    drawTopGrid();
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+    if(logo) logo.classList.add("show");
+    if(btn) btn.classList.add("show");
     return;
   }
-  if(document.getElementById("projectLabel")) document.getElementById("projectLabel").textContent =
-    `${project.name} — ${activeMap.name} (${vm})`;
+  requestAnimationFrame(()=> setTimeout(show, 50));
+})();
 
-  if (vm === "angular") drawAngularGrid();
-  else drawTopGrid();
-}
-
-/* -------------------------
-   Toolbar wiring
-------------------------- */
-function setActiveTool(tool){
-  activeTool = tool;
-  document.querySelectorAll("#toolbar button[data-tool]").forEach(btn=>{
-    btn.classList.toggle("active", btn.dataset.tool === tool);
-  });
-}
-
-function wireToolbar(){
-  // Tool buttons
-  document.querySelectorAll("#toolbar button[data-tool]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      setActiveTool(btn.dataset.tool);
-    });
-  });
-
-  // Zoom buttons
-  document.getElementById("zoomOutBtn").addEventListener("click", ()=>{
-    zoom = Math.max(0.5, Math.round((zoom - 0.1)*10)/10);
-    applyZoom();
-  });
-  document.getElementById("zoomInBtn").addEventListener("click", ()=>{
-    zoom = Math.min(3, Math.round((zoom + 0.1)*10)/10);
-    applyZoom();
-  });
-  document.getElementById("zoomResetBtn").addEventListener("click", ()=>{
-    zoom = 1;
-    applyZoom();
-  });
-
-  // Grid contrast toggle
-  document.getElementById("gridContrastBtn").addEventListener("click", ()=>{
-    gridContrast = (gridContrast === "normal") ? "high" : "normal";
-    document.getElementById("gridContrastBtn").textContent =
-      (gridContrast === "high") ? "Grid: High" : "Grid: Normal";
-    draw();
-  });
-
-  // Save
-  document.getElementById("saveBtn").addEventListener("click", ()=>{
-    persistProject();
-    const toast = document.getElementById("toast");
-    toast.textContent = "Saved";
-    toast.classList.add("show");
-    setTimeout(()=>toast.classList.remove("show"), 900);
-  });
-}
-
-/* -------------------------
-   View Modal wiring
-------------------------- */
-function wireViewModal(){
-  document.getElementById("pickTop").addEventListener("click", ()=>setViewMode("top"));
-  document.getElementById("pickAngular").addEventListener("click", ()=>setViewMode("angular"));
-}
-
-/* -------------------------
-   Bootstrap
-------------------------- */
-
-function bootstrap() {
-  project = getActiveProject();
-
-  // No project -> back to manager
-  if (!project) return backToManager();
-
-  // Legacy compatibility: allow maps under project.data.maps
-  if (!Array.isArray(project.maps) || !project.maps.length) {
-    const legacyMaps = project?.data?.maps;
-    if (Array.isArray(legacyMaps) && legacyMaps.length) project.maps = legacyMaps;
-  }
-
-  if (!Array.isArray(project.maps) || !project.maps.length) return backToManager();
-
-  // Resolve active map (with fallback)
-  activeMap = resolveActiveMap(project);
-  if (!activeMap) return backToManager();
-
-  // Normalize view mode
-  activeMap.viewMode = normalizeViewMode(activeMap.viewMode);
-
-  // Wire UI
-  wireToolbar();
-  wireViewModal();
-
-  // If missing view mode, force modal. Otherwise render immediately.
-  if (!activeMap.viewMode) {
-    showViewModal();
-    // draw a default grid behind modal so user sees something
-    initTopDownGrid();
-  } else {
-    hideViewModal();
-    if (activeMap.viewMode === "angular") initAngularGrid();
-    else initTopDownGrid();
-  }
-
-  updateProjectLabel(project, activeMap);
-}
-
-document.addEventListener('DOMContentLoaded', bootstrap);
 </script>
-
-<!-- MODALS -->
-<div class="backdrop hidden" id="regionModal">
-  <div class="modal">
-    <h3>Regions</h3>
-    <p class="muted">Tap and drag on the canvas to mark regions (coming next).</p>
-    <button class="secondary" data-close="regionModal">Close</button>
-  </div>
-</div>
-
-<div class="backdrop hidden" id="objectModal">
-  <div class="modal">
-    <h3>Objects</h3>
-    <p class="muted">Place interactables, NPC anchors, and props (coming next).</p>
-    <button class="secondary" data-close="objectModal">Close</button>
-  </div>
-</div>
-
-<div class="backdrop hidden" id="musicModal">
-  <div class="modal">
-    <h3>Music</h3>
-    <p class="muted">Assign BGM / SFX per map or region (coming next).</p>
-    <button class="secondary" data-close="musicModal">Close</button>
-  </div>
-</div>
-
-<div id="toast" class="toast"></div>
 </body>
 </html>
