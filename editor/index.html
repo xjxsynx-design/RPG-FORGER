@@ -152,6 +152,22 @@ body, button, input, select, .modal{font-family: Chalkduster, "Chalkduster", sys
 }
 .modal h2, .modal h3{ color: rgba(255,178,74,0.95); }
 
+
+/* ===== Build stamp (Phase A) ===== */
+#buildStamp {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  z-index: 999999;
+  pointer-events: none;
+  user-select: none;
+  color: #e6e6e6;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.75);
+}
 </style>
 </head>
 <body>
@@ -584,5 +600,7 @@ document.addEventListener('DOMContentLoaded', bootstrap);
 </div>
 
 <div id="toast" class="toast"></div>
+
+<div id="buildStamp">Forgeworks v1.0</div>
 </body>
 </html>
